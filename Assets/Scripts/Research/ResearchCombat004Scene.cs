@@ -134,14 +134,16 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         Color32 steel = new Color32(223, 236, 247, 255);
         int foot = Mathf.RoundToInt(ax);
         // Deliberately different trims and arm poses. Bottom remains at each supplied foot anchor.
-        DrawRect(pixels, w, h, foot - 13, 18, 11, 37, outline);
-        DrawRect(pixels, w, h, foot + 2, 18, 12, 37, outline);
-        DrawRect(pixels, w, h, foot - 21, 45, 44, 43, outline);
-        DrawRect(pixels, w, h, foot - 18, 48, 38, 37, blue);
-        DrawRect(pixels, w, h, foot - 14, 90, 28, 17, outline);
-        DrawRect(pixels, w, h, foot - 11, 93, 22, 11, light);
-        DrawRect(pixels, w, h, foot + 4, 98, 4, 4, outline);
-        int armY = pose == 0 ? 60 : (pose % 3 == 0 ? 85 : 72);
+        // Feet terminate at texture y=0, at the declared ground anchor.
+        DrawRect(pixels, w, h, foot - 13, 0, 11, 40, outline);
+        DrawRect(pixels, w, h, foot + 2, 0, 12, 40, outline);
+        DrawRect(pixels, w, h, foot - 21, 35, 44, 43, outline);
+        DrawRect(pixels, w, h, foot - 18, 38, 38, 37, blue);
+        int headY = h - 27;
+        DrawRect(pixels, w, h, foot - 14, headY, 28, 20, outline);
+        DrawRect(pixels, w, h, foot - 11, headY + 3, 22, 14, light);
+        DrawRect(pixels, w, h, foot + 4, headY + 9, 4, 4, outline);
+        int armY = pose == 0 ? 49 : (pose % 3 == 0 ? 62 : 55);
         DrawRect(pixels, w, h, foot + 17, armY, 18, 9, outline);
         DrawRect(pixels, w, h, foot + 22, armY + 2, 16, 5, light);
         // White diagonal/vertical sword is original colored rectangle artwork.
