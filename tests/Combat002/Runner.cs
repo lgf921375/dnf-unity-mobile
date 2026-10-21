@@ -102,8 +102,103 @@ public static class Runner
             }
         }
     }
+
+    // COMBAT-005: RED/GREEN tests added before code fixes. Tests use actual .NET C#.
+    static void CrossStepBufferedChain()
+    {
+        foreach (float dt in new[] { 0.12f, 0.16f, 0.20f })
+        {
+            var c = new ThreeHitReferenceClock();
+            c.PressAttack(); c.PressAttack();
+            c.Step(dt);
+            Require(c.Stage == 2, "buffered input missed chain at dt=" + dt);
+            Close(c.Elapsed, dt - 0.12f); // time beyond chain event must carry into attack 2
+        }
+    }
+
+    static void PartitionEquivalence()
+    {
+        var single = new ThreeHitReferenceClock();
+        var ticks = new ThreeHitReferenceClock();
+        single.PressAttack(); single.PressAttack();
+        ticks.PressAttack(); ticks.PressAttack();
+        single.Step(0.20f);
+        for (int i = 0; i < 12; i++) ticks.Step(ThreeHitReferenceClock.StepSeconds);
+        Require(single.Stage == 2 && ticks.Stage == 2, "single/ticks stage divergence");
+        Require(Math.Abs(single.Elapsed - ticks.Elapsed) < .001f,
+            "time lost at chain transition: one=" + single.Elapsed + " 12ticks=" + ticks.Elapsed);
+    }
+
+    static void IntervalHitWindow()
+    {
+        var c = new ThreeHitReferenceClock();
+        c.PressAttack();
+        c.Step(0.12f); // [0,.12] completely crosses [0.06,.11)
+        Require(!c.IsHitWindow, "instantaneous hit window should be closed");
+        float freeze;
+        Require(c.TryRegisterContact(out freeze), "skipped hit window not reported in Step interval");
+        Close(freeze, 0.055f);
+        Require(!c.TryRegisterContact(out freeze), "duplicate contact after interval traversal");
+
+        var exp = new ThreeHitReferenceClock();
+        exp.PressAttack(); exp.Step(0.12f); exp.Step(0.02f);
+        Require(!exp.TryRegisterContact(out freeze),
+            "old skipped interval must not remain a contact candidate indefinitely");
+    }
+
+    static void RejectNonFiniteTime()
+    {
+        foreach (float dt in new[] { float.NaN, float.PositiveInfinity, float.NegativeInfinity })
+        {
+            var c = new ThreeHitReferenceClock(); c.PressAttack();
+            bool caught = false;
+            try { c.Step(dt); } catch (ArgumentOutOfRangeException) { caught = true; }
+            Require(caught, "non-finite time accepted " + dt);
+            Require(c.Stage == 1 && !float.IsNaN(c.Elapsed) && !float.IsInfinity(c.Elapsed)
+                    && c.Elapsed == 0f, "invalid delta corrupted clock");
+        }
+    }
+
+    static void ImmutableReferenceArrays()
+    {
+        var c1 = new ThreeHitReferenceClock();
+        var c2 = new ThreeHitReferenceClock();
+        c1.PressAttack(); c2.PressAttack();
+        c1.Current.FrameStarts[1] = 99f;
+        c1.Current.FrameKeys[1] = "polluted";
+        Require(c1.Current.FrameStarts[1] == .05f && c2.Current.FrameStarts[1] == .05f,
+            "shared FrameStarts mutated");
+        Require(c1.Current.FrameKeys[1] == "a1_2" && c2.Current.FrameKeys[1] == "a1_2",
+            "shared FrameKeys mutated");
+        c1.Step(.05f); c2.Step(.05f);
+        Require(c1.FrameKey == "a1_2" && c2.FrameKey == "a1_2", "frame changed externally");
+
+        var keys = new[] { "x", "y" }; var times = new[] { 0f, .1f };
+        var spec = new ReferenceAttack(1f, .2f, .3f, .4f, .01f, keys, times);
+        keys[1] = "bad"; times[1] = 99f;
+        Require(spec.FrameKeys[1] == "y" && spec.FrameStarts[1] == .1f,
+            "constructor kept caller-owned arrays");
+    }
+
+    static void PreserveRendererDepth()
+    {
+        var sr = new SpriteRenderer();
+        sr.transform.localPosition = new Vector3(1f, 2f, 7.25f);
+        ReferenceSpriteAlignment.ApplyCenteredSprite(sr, new Sprite(), 150f, 195f, 58.7f, 195.3f, 180f);
+        Close(sr.transform.localPosition.z, 7.25f);
+        sr.flipX = true;
+        ReferenceSpriteAlignment.ApplyCenteredSprite(sr, new Sprite(), 150f, 195f, 58.7f, 195.3f, 180f);
+        Close(sr.transform.localPosition.z, 7.25f);
+    }
+
     public static int Main()
     {
+        Test("COMBAT-005 crossed-buffer 0.12/0.16/0.20", CrossStepBufferedChain);
+        Test("COMBAT-005 dt partition equivalence", PartitionEquivalence);
+        Test("COMBAT-005 interval hit-window traversal", IntervalHitWindow);
+        Test("COMBAT-005 nonfinite dt guarded", RejectNonFiniteTime);
+        Test("COMBAT-005 public frame arrays isolated", ImmutableReferenceArrays);
+        Test("COMBAT-005 SpriteRenderer Z preserved", PreserveRendererDepth);
         Test("idle/reset", Reset);
         Test("frame change points", Frames);
         Test("input buffer at 60Hz", BufferAt60Hz);
