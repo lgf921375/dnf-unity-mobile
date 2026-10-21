@@ -39,7 +39,9 @@ namespace DnfUnityMobile.Research
             // character root has negative localScale.x, do not also set flipX.
             if (childRenderer.flipX)
                 offset.x = -offset.x;
-            childRenderer.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
+            // The scene owns depth ordering; changing a frame must not overwrite Z.
+            float existingZ = childRenderer.transform.localPosition.z;
+            childRenderer.transform.localPosition = new Vector3(offset.x, offset.y, existingZ);
         }
     }
 }
