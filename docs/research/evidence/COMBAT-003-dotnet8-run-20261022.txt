@@ -1,0 +1,116 @@
+DNF-UNITY-COMBAT-003 — Actual .NET 8 C# compilation + isolated console tests
+Date: 2026-10-22 Asia/Singapore / execution started 2026-10-21T23:08:07Z
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/1
+Repo: lgf921375/dnf-unity-mobile
+Approved research branch: research/unity6-dawnbreak-threehit-20261021
+Exact source checkout HEAD before/after execution: c5fcee2bfd8de11b29469ede55bc85f238b84eff
+main HEAD separately verified unchanged: ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+
+1. ACTUAL EXECUTION ENVIRONMENT (not Python translation)
+Authorized remote device: hk-relay-01; Ubuntu 24.04, linux-x64.
+Remote command runner: Desktop Commander on the owner's authorized device.
+All SDK and repository files lived in an isolated temporary directory:
+  /tmp/dnf-combat003.E4GZI2/
+No system-level SDK installation, production service restart, cloud build, GitHub Actions invocation,
+main branch modification, Godot edit, or third-party game art import/distribution occurred.
+Available disk before download: 5,312,308 KiB; available memory: 1,447,608 KiB.
+SDK obtained via the official dotnet-install.sh script, installed with --channel 8.0
+--install-dir /tmp/dnf-combat003.E4GZI2/sdk --no-path.
+Source obtained by shallow clone of the approved research branch, without credentials.
+
+2. REPRODUCIBLE COMMAND / RETURN CODE
+SDK probe:
+  /tmp/dnf-combat003.E4GZI2/sdk/dotnet --info
+Execution command (run inside temporary checkout):
+  /tmp/dnf-combat003.E4GZI2/sdk/dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+Equivalent with temporary SDK on PATH:
+  dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+stdout and stderr combined to /tmp/dnf-combat003.E4GZI2/run.log and displayed to execution tool.
+TEST_EXIT=0 (actual process exit code).
+Process runtime reported by remote terminal session: 20.05 seconds including SDK setup and checkout; not a benchmark.
+run.log SHA-256: 066d382dd5ccb3865af9ba26d4b7ebaa109dbdebe95ae5f5fa8200d9c5324932
+
+3. COMPLETE .NET CLI VERSION OUTPUT (dotnet --info)
+.NET SDK:
+ Version:           8.0.426
+ Commit:            a021cd4eac
+ Workload version:  8.0.400-manifests.1f030c1a
+ MSBuild version:   17.11.69+4d6a29faa
+
+Runtime Environment:
+ OS Name:     ubuntu
+ OS Version:  24.04
+ OS Platform: Linux
+ RID:         linux-x64
+ Base Path:   /tmp/dnf-combat003.E4GZI2/sdk/sdk/8.0.426/
+
+.NET workloads installed:
+Configured to use loose manifests when installing new manifests.
+There are no installed workloads to display.
+
+Host:
+  Version:      8.0.32
+  Architecture: x64
+  Commit:       b9a49e4a6d
+
+.NET SDKs installed:
+  8.0.426 [/tmp/dnf-combat003.E4GZI2/sdk/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 8.0.32 [/tmp/dnf-combat003.E4GZI2/sdk/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 8.0.32 [/tmp/dnf-combat003.E4GZI2/sdk/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  Not set
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+4. COMPLETE TEST PROGRAM STDOUT/STDERR (combined; no errors emitted)
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 6 pass, 0 fail
+
+TEST_EXIT=0
+END_HEAD=c5fcee2bfd8de11b29469ede55bc85f238b84eff
+GIT_STATUS=1  # Explanation below; NOT a changed tracked source file
+
+5. PASS / BLOCKED INTERPRETATION
+PASS .NET 8 SDK compilation of real ThreeHitReferenceClock.cs and ReferenceSpriteAlignment.cs,
+  linked directly by the net8.0 console project with test-only UnityEngine stand-ins.
+PASS idle/reset/start-again.
+PASS action frame changes at specified test timestamps.
+PASS buffered chain: 7 ticks of 1/60 s remain in stage 1; after 8th tick stage 2;
+  stage 2 to 3; pressing again in stage 3 does not start stage 4; final expiry to idle.
+PASS contact window check with an inside offset of +0.001 s, an outside overshoot,
+  and one successful contact per stage. The harness does not exhaustively test
+  every exact floating-point threshold or per-target collision dedup.
+PASS negative delta rejected by ArgumentOutOfRangeException.
+PASS eight factual frame metadata samples, each with flipX off/on,
+  using test-only substitute UnityEngine types; alignment math only.
+
+BLOCKED/NOT RUN: Unity 6000.3.26f1 editor import/compilation, actual SpriteRenderer
+rendering, screen capture, phone APK installation, Unity Cloud. No Unity Editor ran.
+NOT IMPLEMENTED: actual hitstop freezing, victim reaction, physics collision or target dedup.
+
+6. WORKING TREE / LIMITATIONS
+After run, git status --porcelain:
+  ?? tests/Combat002/bin/
+This was generated build output only; no tracked files were changed by the test.
+Source HEAD remained the exact requested c5fcee... SHA.
+No code fix needed. Evidence and active-handoff file commits (if any) are documentation-only.
+The earlier Python 8/8 checks were NOT rerun and are NOT cited as evidence of real compilation.
+Do not close Issue #1 before 智脑2 independent review.
