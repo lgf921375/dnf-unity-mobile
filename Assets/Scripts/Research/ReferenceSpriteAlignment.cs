@@ -33,6 +33,12 @@ namespace DnfUnityMobile.Research
             if (authorizedSprite == null) throw new ArgumentNullException(nameof(authorizedSprite));
             childRenderer.sprite = authorizedSprite;
             Vector2 offset = CenterPivotOffset(widthPixels, heightPixels, ax, ay, pixelsPerUnityUnit);
+            // SpriteRenderer.flipX mirrors pixels around their centered pivot, but does
+            // not mirror childRenderer.transform.localPosition. Compensate the anchor.
+            // Set flipX before calling; re-apply when facing changes. If instead the
+            // character root has negative localScale.x, do not also set flipX.
+            if (childRenderer.flipX)
+                offset.x = -offset.x;
             childRenderer.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
         }
     }
