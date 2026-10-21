@@ -1,0 +1,141 @@
+DNF-UNITY-COMBAT-005 — REAL .NET 8 RED/GREEN BOUNDARY REGRESSION
+Date: 2026-10-22 (Asia/Singapore)
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/4
+Audit: https://github.com/lgf921375/dnf-unity-mobile/issues/2#issuecomment-6328748815
+Repository: lgf921375/dnf-unity-mobile
+Writable research branch: research/unity6-dawnbreak-threehit-20261021
+Protected main checkpoint (independently queried after fixes): ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+
+ENVIRONMENT / EXECUTION
+Authorized hk-relay-01 remote device, Ubuntu 24.04, Linux x64; isolated /tmp/dnf-combat005.hkfLOK/
+Installed official .NET SDK via dotnet-install.sh --channel 8.0 in a temporary private directory.
+.NET SDK 8.0.426; SDK commit a021cd4eac; MSBuild 17.11.69+4d6a29faa.
+.NET runtime 8.0.32, host commit b9a49e4a6d; platform ubuntu 24.04, linux-x64.
+No user-wide SDK, no system packages modified. Remote source is a shallow checkout of only the research branch.
+dotnet --info (key raw fields):
+.NET SDK:
+ Version:           8.0.426
+ Commit:            a021cd4eac
+ Workload version:  8.0.400-manifests.1f030c1a
+ MSBuild version:   17.11.69+4d6a29faa
+
+Runtime Environment:
+ OS Name:     ubuntu
+ OS Version:  24.04
+ OS Platform: Linux
+ RID:         linux-x64
+ Base Path:   /tmp/dnf-combat005.hkfLOK/sdk/sdk/8.0.426/
+
+Host:
+  Version:      8.0.32
+  Architecture: x64
+  Commit:       b9a49e4a6d
+
+Command in both phases:
+ /tmp/dnf-combat005.hkfLOK/sdk/dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+stdout and stderr were redirected into red.log / green.log. These are C# tests compiled from
+the actual ThreeHitReferenceClock.cs and ReferenceSpriteAlignment.cs source files with TEST-ONLY
+UnityEngine stubs in Runner.cs; no Unity Editor / PlayMode occurred.
+
+RED (ORIGINAL PRODUCTION CODE + NEW TESTS)
+HEAD: 8ae40782e37d79f9e040c229bb05839bd716efa5
+Change from COMBAT-003 baseline: tests/Combat002/Runner.cs ONLY (added six regression groups).
+Actual test process exit: RED_TEST_EXIT=1
+red.log SHA256: 0d8716b44fe7a527b82c83c7a2110d298b95d47177b29d8e6377a93e6cf4f828
+
+COMPLETE red.log:
+FAIL COMBAT-005 crossed-buffer 0.12/0.16/0.20: System.Exception: buffered input missed chain at dt=0.16
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.CrossStepBufferedChain() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 114
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+FAIL COMBAT-005 dt partition equivalence: System.Exception: single/ticks stage divergence
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.PartitionEquivalence() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 127
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+FAIL COMBAT-005 interval hit-window traversal: System.Exception: skipped hit window not reported in Step interval
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.IntervalHitWindow() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 139
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+FAIL COMBAT-005 nonfinite dt guarded: System.Exception: non-finite time accepted NaN
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.RejectNonFiniteTime() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 156
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+FAIL COMBAT-005 public frame arrays isolated: System.Exception: shared FrameStarts mutated
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.ImmutableReferenceArrays() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 169
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+FAIL COMBAT-005 SpriteRenderer Z preserved: System.Exception: expected 7.25 got 0
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.Close(Single actual, Single expected) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 12
+   at Runner.PreserveRendererDepth() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 188
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+PASS idle/reset
+FAIL frame change points: System.Exception: a1_2
+   at Runner.Require(Boolean ok, String what) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 10
+   at Runner.Frames() in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 31
+   at Runner.Test(String title, Action a) in /tmp/dnf-combat005.hkfLOK/repo/tests/Combat002/Runner.cs:line 15
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 5 pass, 7 fail
+
+Red note: the legacy "frame change points" fails because the earlier deliberate frame-array
+mutation polluted the STATIC shared sequence, demonstrating test-order contamination.
+
+MINIMAL SOURCE FIX (after RED test)
+1. Assets/Scripts/Research/ThreeHitReferenceClock.cs commit 01b636cbae3cbe4165ba5a70cf0a1293ed9a00bb
+  * preserve queued input validity at the exact chain-crossing instant BEFORE lifetime decrement;
+  * Step accepts finite variable dt and processes chain transition at 0.12 s, carries overshoot
+    into the next stage, supports both single and 60Hz steps;
+  * report traversal of latest Step interval's hit window as eligible temporal candidate
+    (collision/hit resolution NOT implemented; previous intervals do not accumulate indefinitely);
+  * reject NaN/+Infinity/-Infinity, throw on negative delta;
+  * clone frame arrays on both construction and public access; internal accessors avoid mutation.
+2. Assets/Scripts/Research/ReferenceSpriteAlignment.cs commit c7217e3f95b812186099c779f47232695c1601e8
+  * preserve pre-existing child localPosition.z when applying X/Y foot anchor and flipX compensation.
+No existing main/Godot/Unity scripts other than the listed research branch files were modified.
+
+GREEN (SAME NEW + ORIGINAL TESTS)
+HEAD: c7217e3f95b812186099c779f47232695c1601e8
+Actual test process exit: GREEN_TEST_EXIT=0
+green.log SHA256: 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+
+COMPLETE green.log:
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+
+CHECKS / KNOWN LIMITATIONS
+- These console checks compile actual .NET C# reference classes, but the UnityEngine definitions in
+  Runner.cs are TEST-ONLY stand-ins; not real SpriteRenderer, Unity Editor, PlayMode, Android or cloud build.
+- "Interval hit-window traversed" records TIMING eligibility. It does not assert physical collision,
+  hitbox swept intersection, damage, per-target contact dedup, or hitstop implementation.
+- Current clock is a simplified three-stage sample, not a full DNF/Dawnbreak combat simulator.
+- Current input buffer (0.16 seconds) is an EXPERIMENTAL value and not a verified official DNF value.
+- Additional edge cases not proven by these tests: single-precision ULP neighbors at all boundaries,
+  overlapping multiple attack events in one large dt, sprite crop/PPU/parent negative scale,
+  flipX toggled without reapplying alignment.
+- Recommended future per-target dedup key in combat layer: (attackInstanceId, targetId, hitIndex),
+  or add stage identity to the attack-instance key if reused.
+- Hitstop contract to decide in separate authorized task: freeze attacker's and victim's combat-local
+  action/animation/physics clock on accepted collision; keep UI/network clock running; decide whether
+  buffering continues during freeze but decay uses combat-local time; test deterministic time axes.
+- Another accepted limitation: a clock that advances past a stage transition does not retain a
+  chronological per-stage hit-event queue; future combat collision system must scan swept intervals
+  at runtime rather than treating the clock's latest candidate as a resolved hit.
+- The previous Python 8/8 checks were deliberately NOT repeated.
+- Checkout tracked files remain unmodified after test; only untracked tests/Combat002/bin/ generated
+  by .NET build existed on the temporary machine.
+- GitHub Actions, Unity Cloud build, APK, deployment and third-party Dawnbreak/DNF art were NOT touched.
+- Issue #4 remains OPEN pending 智脑2 acceptance.
