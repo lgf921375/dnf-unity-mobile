@@ -63,6 +63,7 @@ namespace DnfUnityMobile.Research
 
         public int Stage { get; private set; } // 0 = idle; 1, 2, 3 = attacks.
         public float Elapsed => _elapsed;
+        public float QueuedFor => _queuedFor; // Read-only local combat-time buffer debug.
         public bool IsHitWindow => Stage != 0 &&
             _elapsed >= Current.HitBegin && _elapsed < Current.HitEnd;
         public ReferenceAttack Current => Stage == 0
