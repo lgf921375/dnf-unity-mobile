@@ -13,8 +13,14 @@ namespace DnfUnityMobile.Research
         public readonly float HitBegin;
         public readonly float HitEnd;
         public readonly float ContactFreeze;
-        public readonly string[] FrameKeys;
-        public readonly float[] FrameStarts;
+        // Clone on input AND output to prevent mutation of shared static action data.
+        private readonly string[] _frameKeys;
+        private readonly float[] _frameStarts;
+        public string[] FrameKeys => _frameKeys == null ? Array.Empty<string>() : (string[])_frameKeys.Clone();
+        public float[] FrameStarts => _frameStarts == null ? Array.Empty<float>() : (float[])_frameStarts.Clone();
+        public int FrameCount => _frameKeys == null ? 0 : _frameKeys.Length;
+        public string FrameAt(int index) => _frameKeys[index];
+        public float FrameStartAt(int index) => _frameStarts[index];
 
         public ReferenceAttack(float duration, float chainBegin, float hitBegin,
             float hitEnd, float contactFreeze, string[] frameKeys, float[] frameStarts)
@@ -24,8 +30,10 @@ namespace DnfUnityMobile.Research
             HitBegin = hitBegin;
             HitEnd = hitEnd;
             ContactFreeze = contactFreeze;
-            FrameKeys = frameKeys;
-            FrameStarts = frameStarts;
+            if (frameKeys == null || frameStarts == null || frameKeys.Length != frameStarts.Length)
+                throw new ArgumentException("Frame keys and times must have equal non-null length.");
+            _frameKeys = (string[])frameKeys.Clone();
+            _frameStarts = (float[])frameStarts.Clone();
         }
     }
 
@@ -49,6 +57,9 @@ namespace DnfUnityMobile.Research
         private float _elapsed;
         private float _queuedFor;
         private bool _contactConsumed;
+        // Only reports traversal during the most recent Step. This is temporal
+        // eligibility, NOT collision detection nor actual hit resolution.
+        private bool _crossedHitWindow;
 
         public int Stage { get; private set; } // 0 = idle; 1, 2, 3 = attacks.
         public float Elapsed => _elapsed;
@@ -64,9 +75,9 @@ namespace DnfUnityMobile.Research
                 if (Stage == 0) return "idle";
                 var a = Current;
                 int frame = 0;
-                for (int i = 1; i < a.FrameStarts.Length; i++)
-                    if (_elapsed >= a.FrameStarts[i]) frame = i;
-                return a.FrameKeys[frame];
+                for (int i = 1; i < a.FrameCount; i++)
+                    if (_elapsed >= a.FrameStartAt(i)) frame = i;
+                return a.FrameAt(frame);
             }
         }
 
@@ -76,6 +87,7 @@ namespace DnfUnityMobile.Research
             _elapsed = 0f;
             _queuedFor = 0f;
             _contactConsumed = false;
+            _crossedHitWindow = false;
         }
 
         public void PressAttack()
@@ -94,23 +106,67 @@ namespace DnfUnityMobile.Research
             _queuedFor = ExperimentalInputBufferSeconds;
         }
 
-        // Call once per fixed 60 Hz simulation tick (or with a tested fixed step).
-        // Freeze/unstick on contact belongs to the future hit-resolution layer.
+        // Variable-dt event contract (also supports 60 Hz):
+        // A queued attack is valid until the input-buffer expiry instant.
+        // If its valid interval reaches ChainBegin, transition exactly at
+        // ChainBegin, carrying remaining dt into the next stage.
+        // The last Step exposes whether the *current* stage's hit window was
+        // traversed, so a long dt cannot hide its whole temporal window.
+        // A future combat/physics layer must do swept overlap and per-target dedup:
+        // this clock does not infer that a target was actually hit.
         public void Step(float deltaSeconds)
         {
-            if (deltaSeconds < 0f) throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
+            if (float.IsNaN(deltaSeconds) || float.IsInfinity(deltaSeconds) || deltaSeconds < 0f)
+                throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
             if (Stage == 0) return;
 
-            _elapsed += deltaSeconds;
-            if (_queuedFor > 0f) _queuedFor = Math.Max(0f, _queuedFor - deltaSeconds);
-
-            if (Stage < 3 && _queuedFor > 0f &&
-                _elapsed >= Current.ChainBegin && _elapsed < Current.Duration)
+            _crossedHitWindow = false;
+            float remaining = deltaSeconds;
+            int transitions = 0;
+            while (Stage != 0 && remaining > 0f)
             {
-                Begin(Stage + 1);
-                return;
+                // At most two chained transitions before the third attack;
+                // guard against future zero-duration configuration errors.
+                if (++transitions > 4)
+                    throw new InvalidOperationException("Unexpected attack stage loop.");
+
+                ReferenceAttack attack = Current;
+                float part = Math.Min(remaining, Math.Max(0f, attack.Duration - _elapsed));
+                bool chainNow = false;
+                if (Stage < 3 && _queuedFor > 0f)
+                {
+                    float untilChain = Math.Max(0f, attack.ChainBegin - _elapsed);
+                    // Evaluate eligibility at the crossing instant, BEFORE buffer
+                    // lifetime is decremented for that part of the interval.
+                    if (untilChain <= part && untilChain <= _queuedFor)
+                    {
+                        part = untilChain;
+                        chainNow = true;
+                    }
+                }
+
+                if (part > 0f)
+                {
+                    if (_elapsed < attack.HitEnd && _elapsed + part > attack.HitBegin)
+                        _crossedHitWindow = true;
+                    _elapsed += part;
+                    _queuedFor = Math.Max(0f, _queuedFor - part);
+                    remaining -= part;
+                }
+
+                if (chainNow)
+                {
+                    Begin(Stage + 1);
+                    continue;
+                }
+
+                if (_elapsed >= attack.Duration)
+                {
+                    Reset();
+                    break;
+                }
+                if (part <= 0f) break;
             }
-            if (_elapsed >= Current.Duration) Reset();
         }
 
         // Reports a single eligible contact during the attack's configured hit window.
@@ -118,7 +174,7 @@ namespace DnfUnityMobile.Research
         public bool TryRegisterContact(out float requestedFreezeSeconds)
         {
             requestedFreezeSeconds = 0f;
-            if (!IsHitWindow || _contactConsumed) return false;
+            if (!(IsHitWindow || _crossedHitWindow) || _contactConsumed) return false;
             _contactConsumed = true;
             requestedFreezeSeconds = Current.ContactFreeze;
             return true;
@@ -130,6 +186,7 @@ namespace DnfUnityMobile.Research
             _elapsed = 0f;
             _queuedFor = 0f;
             _contactConsumed = false;
+            _crossedHitWindow = false;
         }
     }
 }
