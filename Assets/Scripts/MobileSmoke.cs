@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Original, code-only Android touch smoke test. Not a networking or performance benchmark.
@@ -20,6 +21,9 @@ public sealed class MobileSmoke : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreateSmokeScene()
     {
+        // ResearchCombat004 is a separate Editor-only scene. Do not spawn the
+        // Bootstrap smoke camera/GUI in other scenes; keep Bootstrap unchanged.
+        if (SceneManager.GetActiveScene().name != "Bootstrap") return;
         if (FindAnyObjectByType<MobileSmoke>() != null)
             return;
 
