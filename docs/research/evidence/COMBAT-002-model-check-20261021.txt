@@ -1,0 +1,47 @@
+DNF-UNITY-COMBAT-002 — local verification evidence (2026-10-21)
+Target research branch before new changes: 945185fcdab86d953a18d9485084906c210fb32e
+
+PRECHECK:
+- dotnet: not found
+- csc: not found
+- mcs: not found
+- mono: not found
+- msbuild: not found
+- Unity Editor: not available
+- git executable: available (git version 2.47.3)
+- git ls-remote github.com: failed (DNS host could not be resolved)
+- GitHub connector: available for read/write to intended repository
+- No remote build, no Unity execution.
+
+EXECUTED:
+Independent Python translation of current ThreeHitReferenceClock.cs behavior and
+anchor algebra (NOT original C# and NOT real SpriteRenderer), run in ephemeral
+local container. Output:
+ PASS idle
+ PASS frame_sequence
+ PASS queued_combo_60hz
+ PASS once_per_stage_contact
+ PASS reset_after_duration
+ PASS negative_dt_rejected
+ PASS unflipped_and_flipped_anchor_invariant
+ PASS original_flipX_bug_reproduced_in_math
+TOTAL: 8 PASS / 0 FAIL (MODEL ONLY)
+
+CONFIRMED GEOMETRIC EXAMPLE:
+a1_1: width=150, ax=58.7, pixelsPerUnityUnit=180
+original X offset = (75-58.7)/180 = +0.0905556 Unity units
+flipped renderer requires -0.0905556 Unity units instead;
+uncompensated flipped anchor error = 0.1811111 Unity units.
+Fix on isolated branch reverses offset.x when SpriteRenderer.flipX=true.
+No actual Unity sprite/art was imported.
+
+NOT EXECUTED:
+- dotnet run --project tests/Combat002/Combat002.Tests.csproj -c Release
+- Unity 6000.3.26f1 compile/import
+- real SpriteRenderer foot-anchor/flipX view
+- physics hits, actor hitstop, enemy reaction
+- Android APK / cloud build
+
+STATUS RULE:
+Model tests are independent approximations. Do NOT mark C# compiled, Unity
+compile passed, rendering validated, or game mechanics accepted from this log.
