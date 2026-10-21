@@ -1,0 +1,36 @@
+# Unity-generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Aa]ssets/AssetStoreTools*
+
+# IDE-generated
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+
+# OS-generated
+.DS_Store
+Thumbs.db
+
+# Credentials and export signing: NEVER check into public repository
+*.keystore
+*.jks
+*.ulf
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
