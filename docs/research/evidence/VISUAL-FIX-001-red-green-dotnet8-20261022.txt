@@ -1,0 +1,199 @@
+DNF-UNITY-VISUAL-FIX-001 — REPRODUCIBLE REAL .NET 8 RED/GREEN + PNG EVIDENCE
+Date: 2026-10-22; UTC initial red run 2026-10-22T09:21:55Z
+Task https://github.com/lgf921375/dnf-unity-mobile/issues/15
+Pre-review https://github.com/lgf921375/dnf-unity-mobile/issues/14#issuecomment-6336805185
+Only writable branch: work/unity-visual-fix-001-20261022
+Original task base SHA: 8c9fd5552ebef72110ebe9420f0171da4c784852
+Author-executed RED SHA: 06ef2d158f7a8c6ee0c96657c5d8b72ec90acfb3
+First passing FX-only SHA: 0cc7a72883f6a3bf90b8ac5fe4090e7c24f297a3
+Full 59-case GREEN code/media SHA: b232e02ac3aded5adf529a9f4afe671433b23ccb
+Additional later manifest + test label SHA: 69c67137c73e2633c54066fd9b506ed5d1fd699f
+
+Real machine: authorized hk-relay-01 Ubuntu 24.04 x86_64
+SDK: official .NET 8 SDK 8.0.426 installed only under /tmp/dnf-visual-fix.UvszLO/sdk,
+MSBuild 17.11.69, no Unity 6000.3.26f1 Editor.
+Checkout: /tmp/dnf-visual-fix.UvszLO/repo
+No test modifies protected main, #11/#12/#13, Godot or Cloud settings.
+.NET Test csprojs include actual CombatImpactLifetime.cs, Combat004Core,
+CombatHitEvent, CombatReactionState, CombatVisualAdapter, animation clock,
+and existing test-owned Unity math stubs; they do NOT compile Unity's
+CombatSpritePresenter.cs or ResearchCombat004Scene.cs as actual Unity components.
+
+P1-A — STATIC SOURCE CONTRADICTION / REAL DETERMINISTIC FAILURE
+Old Presenter was enabling target impact in ConsumeHitEvents from FixedUpdate;
+Update subtracted Time.unscaledDeltaTime immediately. With .15f or .24f
+requested duration, one render stall delta .25f before first render could
+deactivate it in the first Update. This was a possible render-loss based on
+code order, NOT a measured Android phone failure.
+
+The red test added pure C# CombatImpactLifetime with exactly the old
+immediate-expiry semantics. No production Presenter fix yet.
+Command:
+dotnet run --project tests/VisualFix001/VisualFix001.Tests.csproj -c Release
+RED EXIT=1; exact combined stdout/stderr:
+FAIL VISUALFIX 0.25s stall cannot hide impact before first rendering chance: first render opportunity lost after .25s stall
+FAIL VISUALFIX 30/60 FPS first frame and bounded expiry: newly spawned effect must get full first frame at fps 0.033333335 got 0.7777778 expected 1
+FAIL VISUALFIX same-tick target101 and target102 with real HitEvents: same tick impact 101/102 lost before first render
+FAIL VISUALFIX twelve FixedUpdates then one render frame: stalled render must still see both
+FAIL VISUALFIX same target refresh and Reset removes FX: refreshed FX must also have a first render chance
+PASS VISUALFIX invalid dt and target index guarded
+VISUAL-FIX-001 1 pass, 5 fail
+sha256(red.log)=8925c9a7e19588854336a82770ed1db23b5428f929143d9996aeba5910dd01cd
+
+P1-A — MINIMAL FIX / GREEN CONTRACT
+CombatImpactLifetime.Begin(target, duration) now arms a per-target
+first-render-opportunity flag; at the next Unity Update,
+AdvanceRenderFrame(Time.unscaledDeltaTime) clears the flag WITHOUT decrementing
+its requested duration, even at .25s; subsequent Update calls consume dt
+normally. Repeated FixedUpdate/Consume calls before one Update cannot
+prematurely reduce the new FX. Reset clears everything; each of the two
+target renderers and lifetimes are independent. Existing per-target routing,
+only-HP-owner and fixed60Hz clocks remain unchanged.
+The pure state machine protects a render FRAME OPPORTUNITY, not an asserted
+actual GPU render frame. The same-target second hit replaces the first
+renderer; a future queued FX system could avoid same-target overwrites.
+
+Actual full 59-case GREEN at code/media SHA b232e02ac3aded5adf529a9f4afe671433b23ccb:
+Command: dotnet run --project tests/VisualFix001/VisualFix001.Tests.csproj -c Release
+GREEN EXIT=0; exact stdout:
+PASS VISUALFIX 0.25s stall cannot hide impact before first rendering chance
+PASS VISUALFIX 30/60 FPS first frame and bounded expiry
+PASS VISUALFIX same-tick target101 and target102 with real HitEvents
+PASS VISUALFIX twelve FixedUpdates then one render frame
+PASS VISUALFIX same target refresh and Reset removes FX
+PASS VISUALFIX invalid dt and target index guarded
+VISUAL-FIX-001 6 pass, 0 fail
+SHA256 16f63c6591f3931e659b386d52b441d4e3f104fab7fc64954eed97f461246f5f
+
+Command: dotnet run --project tests/Combat002/Combat002.Tests.csproj -c Release
+GREEN EXIT=0; exact stdout:
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+SHA256 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+
+Command: dotnet run --project tests/Combat004/Combat004.Tests.csproj -c Release
+GREEN EXIT=0; exact stdout:
+PASS COMBAT004 HIT REACTION per-target immutable event snapshot
+PASS COMBAT004 HIT REACTION full launch/landing/getup/protection lifecycle
+PASS COMBAT004 HIT REACTION grounded OTG once and subsequent protection
+PASS COMBAT004 HIT REACTION victim state clock freezes separately
+PASS COMBAT004 HIT REACTION KO terminal and Reset clears events
+PASS COMBAT004 HIT REACTION down overlap still obeys forward range
+PASS COMBAT004 HIT REACTION deterministic fixed seeds 0..99
+PASS COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 18 pass, 0 fail
+SHA256 874a685a7d8fa0c22aa329c6e0034cda90137c76b50f6b37002de9189a23f998
+
+Command: dotnet run --project tests/Combat007/Combat007.Tests.csproj -c Release
+GREEN EXIT=0; exact stdout:
+MATRIX 1280x720 virtual=1280.00x720.00 scale=1.0000 safeTop=0 controls=4
+PASS COMBAT007 1280x720 16:9 full safe touch matrix
+MATRIX 2400x1080 virtual=1440.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 2400x1080 ultrawide with left/right notch safe matrix
+MATRIX 1920x1080 virtual=1280.00x720.00 scale=1.5000 safeTop=0 controls=4
+MATRIX 1080x2400 virtual=1280.00x2654.81 scale=0.8438 safeTop=80 controls=4
+PASS COMBAT007 1080x2400 portrait orientation-transition safe matrix
+PASS COMBAT007 safeArea clamp/transient fallback and invalid resolution
+PASS COMBAT007 Android-only orientation policy and portrait fallback
+PASS COMBAT007 two-finger held move and once-only ATTACK/RESET
+COMBAT007: 7 pass, 0 fail
+SHA256 a7c36a08909f822294b7390003e7f75d9fb10536dc715d617e27762b7b5e3b61
+
+Command: dotnet run --project tests/ArtSlice001/ArtSlice001.Tests.csproj -c Release
+GREEN EXIT=0; exact stdout at SHA b232e02 (test name still said 12, actual inspected 15):
+ASSET player 640x640 tiles=19 distinct=19 real_pixel_bytes=410240
+PASS ART PNG atlas: original staff mage 19 frames
+ASSET enemy 448x512 tiles=15 distinct=15 real_pixel_bytes=229888
+PASS ART PNG atlas: original mossling 12 frames
+ASSET background 640x1080 tiles=3 distinct=3 real_pixel_bytes=692280
+PASS ART PNG atlas: 3 independent parallax backgrounds
+ASSET vfx 384x160 tiles=3 distinct=3 real_pixel_bytes=61600
+PASS ART PNG atlas: 3 distinct spell arcs
+FOOT frame=128x160 anchor=48,146 PPU=80 centerOffset=0.2000,0.8250
+PASS ART 3 visibly distinct attack poses and pivot/flip metadata
+PASS ART Unity PNG import metas unique GUID and Unity 6000.3.26f1
+PASS ART Unity resource copies/metas, scene import links and untouched core
+ART-SLICE-001 7 pass, 0 fail
+SHA256 4e38d9712514b6be8b2e704c0039dc149a7c43ca7cf5ebc340459082be02e2e5
+
+Command: dotnet run --project tests/VisualIntegration001/VisualIntegration001.Tests.csproj -c Release
+GREEN EXIT=0; exact stdout:
+PASS VISUAL same-tick 2 targets routed once by ID from real events
+PASS VISUAL stage 3 launches and produces heavy upper effects
+PASS VISUAL AIR DOWN GETUP INVUL KO atlas selection
+PASS VISUAL only verified stage1/2 OTG gets FX, no damage replay
+PASS VISUAL wrong target and Reset route protection
+PASS VISUAL three original mage attack keys and readonly damage
+PASS VISUAL scene consumes one-time event and retains COMBAT007
+PASS VISUAL reject duplicate target IDs and replayed/stale ticks
+PASS VISUAL actual Sprite Presenter source has independent arc-hit effects
+VISUAL-INTEGRATION-001 9 pass, 0 fail
+SHA256 c9e5110214142d203044df4d381ab8c0575f871258d006d72fde8a7e9ca46f70
+
+TOTAL 59 PASS / 0 FAIL = NEW 6 + HISTORICAL 53.
+All six executed processes returned exit=0 on the b232e02 code/media SHA.
+
+P1-B — REAL NEW IMAGE, NOT JUST RENAMED KEYS
+Old original atlas (unchanged #13): 448x384 PNG8, 12 state slots, only
+10 unique pixel pose hashes, SHA256
+01c6dce6b4b950d769c8cee4d762a9af50ac65976331fb6528183adcf1408033.
+New original PNG8: 448x512, cells 112x128, 15 state slots, **15 UNIQUE PIXEL
+SHA256 hashes**, stable PPU80, ax55 ay118, same Unity .meta GUID.
+Art and Resources copies identical actual SHA256
+6e2c5d7972e1b22cb24746bde78cfcc090c00baa81b9f2646ba2efb92698c95c.
+PNG preview of down0/down1/getup0/getup1/invul0/ko0 is real pixels, NOT
+a Unity screenshot; SHA256
+219ebaf8b2d7c03e7c66df3c20ff068c264853a75a3cf1dcf5ecff72bd318735.
+A user-visible comparison link:
+https://github.com/lgf921375/dnf-unity-mobile/blob/work/unity-visual-fix-001-20261022/docs/research/evidence/visual-fix-001-mossling-down-getup-invul-ko.png
+Existing first 9 enemy slots preserved pixel-for-pixel; down1 and ko0 redrawn;
+three new slots for half-kneeling getup0, standing getup1, guarded invul0.
+No downloaded DNF/Nexon/Dawnbreak or other third-party resources.
+
+POST-DOC/TEST LABEL RECHECK (new checkout SHA 69c67137c73e2633c54066fd9b506ed5d1fd699f):
+This SHA only adds an updated manifest and changes the display-name string
+"original mossling 12 frames" to "15 distinct original mossling poses".
+Real repeated tests with visible stdout were:
+- VisualFix001 6/6 exit=0 SHA256 unchanged 16f63c65...
+- Combat002 12/12 exit=0 SHA256 unchanged 7425c820...
+- Combat004 18/18 exit=0 SHA256 unchanged 874a685a...
+- Combat007 7/7 exit=0 SHA256 unchanged a7c36a08...
+- ArtSlice001 7/7 exit=0, NEW SHA256
+  8c63b805d4ffea425984fd1eaa06afe521ed4fba30bef891884b58fb7104f40a.
+=> 50/50 confirmed at 69c671. The final repetition of VisualIntegration001
+is NOT CLAIMED VERIFIED: Desktop Commander returned month usage cap reached
+when trying to retrieve further process output. Prior green VisualIntegration
+9/9 was fully observed at SHA b232e02, and its sources were not modified after.
+No synthetic final repeat log/exit value is asserted.
+
+STATIC PRESERVATION:
+- Stable metas for 2 PNG copies, new helper .cs.meta, existing scene and sprites.
+- BuildSettings index0 ResearchCombat004, index1 Bootstrap UNCHANGED.
+- Fixed 60Hz, per-target HitEvent, 3 attacks, hitstop, otg protection, 2-finger
+  touch and landscape source code not changed in this isolated task.
+- No Unity Editor 6000.3.26f1 import/compiler run and no new Android APK;
+  first-frame visible GPU effect remains to be verified in an authorized
+  Unity render/phone video. No unsupported 500-on-screen or 10k CCU claims.
+- A new genuinely independent, non-author audit must still inspect the
+  final exact SHA before 智脑2 applies for one manual Cloud build. No AUTO.
