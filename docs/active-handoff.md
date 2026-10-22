@@ -1,3 +1,25 @@
+# Active handoff — DNF-UNITY-HIT-REACTION-001 (2026-10-22)
+
+## Isolation and change ownership
+- Issue https://github.com/lgf921375/dnf-unity-mobile/issues/12; executor DNF-执行-HitReaction-002; final acceptance 智脑2.
+- Only writable branch work/unity-hit-reaction-001-20261022; original baseline fbeb2df3b150c6358009ded5a16c41d37b911d7f. Protected main ae65b231f5b100ac46d71b8f3ddd3348ae948d5e.
+- RED GitHub commit 3afdc5620d103776aa8c6267799b9b1ad6331064; GREEN code commit 7c77aad6e7aff8ca3b6120e4b642699de2c47a5a. Final evidence-doc SHA recorded in Issue #12.
+- Only core C#, two new event/state classes, tests/Combat004, and the specified documentation are modified. No main, Godot, #11 art branch, scene, visual art or BuildSettings modifications.
+
+## Executed, real .NET 8 on GitHub committed versions
+- hk-relay-01 / Ubuntu 24.04 linux-x64, isolated SDK 8.0.426 / Runtime 8.0.32. Freshly cloned RED and GREEN GitHub SHAs; no simulated Python tests.
+- RED 12 PASS / 6 FAIL / exit 1; missing event and state API contracts.
+- GREEN Combat004 18 PASS / 0 FAIL, Combat002 12 / 0, Combat007 7 / 0, all exit 0. One of the 18 tests iterates seeds 0..99 deterministically. 37 test cases total.
+- Full actual stdout, stderr, SDK info, SHA256, exit codes: docs/research/evidence/HIT-REACTION-001-dotnet8-red-green-20261022.txt
+- API semantics and presenter guidance: docs/research/combat-reaction-contract.md
+- Hitstop and fixed 60Hz combat contract preserved. Per-target readonly event only after HP damage. AIR_RISE/AIR_FALL, landing, DOWN/GETUP/INVUL, grounded one-time OTG and KO/Reset tests passed.
+
+## Scope limits and pending review
+- No Unity Editor/PlayMode, scene rendering, #11 display hook, real physical sweep, Android phone, cloud build, GitHub Actions or APK. Actual mobile DNF-grade feel is NOT verified.
+- Must not cherry-pick #11 or merge main without 智脑2 separate review. New Unity Cloud build requires explicit future approval.
+
+---
+
 # Active handoff — DNF-UNITY-COMBAT-007 (2026-10-22)
 
 ## Scope / user feedback / protection

@@ -1,0 +1,202 @@
+DNF-UNITY-HIT-REACTION-001 | real .NET 8 RED/GREEN audit
+Date (UTC): 2026-10-22T07:45:21.369389+00:00
+Host: authorized hk-relay-01 | Ubuntu 24.04 linux-x64
+SDK: /tmp/dnf-hitreaction-002/dotnet/dotnet (private, not system installed)
+Working directory: /tmp/dnf-hitreaction-002/verify (fresh clone, SHA checkout)
+Baseline SHA: fbeb2df3b150c6358009ded5a16c41d37b911d7f
+RED Github SHA: 3afdc5620d103776aa8c6267799b9b1ad6331064
+GREEN Github SHA: 7c77aad6e7aff8ca3b6120e4b642699de2c47a5a
+Execution is .NET 8 console tests of real C# core; no Unity Editor/Android/Cloud/Actions builds.
+
+
+=== SDK --info stdout ===
+.NET SDK:
+ Version:           8.0.426
+ Commit:            a021cd4eac
+ Workload version:  8.0.400-manifests.1f030c1a
+ MSBuild version:   17.11.69+4d6a29faa
+
+Runtime Environment:
+ OS Name:     ubuntu
+ OS Version:  24.04
+ OS Platform: Linux
+ RID:         linux-x64
+ Base Path:   /tmp/dnf-hitreaction-002/dotnet/sdk/8.0.426/
+
+.NET workloads installed:
+Configured to use loose manifests when installing new manifests.
+There are no installed workloads to display.
+
+Host:
+  Version:      8.0.32
+  Architecture: x64
+  Commit:       b9a49e4a6d
+
+.NET SDKs installed:
+  8.0.426 [/tmp/dnf-hitreaction-002/dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 8.0.32 [/tmp/dnf-hitreaction-002/dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 8.0.32 [/tmp/dnf-hitreaction-002/dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  Not set
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+=== SDK --info stderr ===
+
+
+==== RED ====
+GIT_SHA=3afdc5620d103776aa8c6267799b9b1ad6331064
+CMD: /tmp/dnf-hitreaction-002/dotnet/dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+EXIT_CODE=1
+STDOUT_SHA256=76a0345de89a16a632917c1223ce0dbae969b34125f69cc069bba4cfc3ced2a6
+STDERR_SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- FULL STDOUT ---
+FAIL COMBAT004 HIT REACTION per-target immutable event snapshot: System.Exception: missing contract Combat004Core.HitEvents
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.Get(Object obj, String property) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 276
+   at Combat004Runner.Events(Combat004Core c) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 285
+   at Combat004Runner.PerTargetHitEvents() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 304
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 18
+FAIL COMBAT004 HIT REACTION full launch/landing/getup/protection lifecycle: System.Exception: missing contract Combat004Enemy.Reaction
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.Get(Object obj, String property) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 276
+   at Combat004Runner.Reaction(Combat004Enemy e) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 281
+   at Combat004Runner.FullReactionLifecycle() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 325
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 18
+FAIL COMBAT004 HIT REACTION grounded OTG once and subsequent protection: System.Exception: missing contract Combat004Enemy.Reaction
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.Get(Object obj, String property) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 276
+   at Combat004Runner.Reaction(Combat004Enemy e) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 281
+   at Combat004Runner.<>c__DisplayClass24_0.<OnceOnlyOtgWithProtection>b__1() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 341
+   at Combat004Runner.Until(Combat004Core c, Func`1 predicate, Int32 max) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 23
+   at Combat004Runner.OnceOnlyOtgWithProtection() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 341
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 18
+FAIL COMBAT004 HIT REACTION victim state clock freezes separately: System.Exception: missing contract Combat004Enemy.Reaction
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.Get(Object obj, String property) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 276
+   at Combat004Runner.Reaction(Combat004Enemy e) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 281
+   at Combat004Runner.FreezePausesReactionClock() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 356
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 18
+FAIL COMBAT004 HIT REACTION KO terminal and Reset clears events: System.Exception: missing contract Combat004Enemy.Reaction
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.Get(Object obj, String property) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 276
+   at Combat004Runner.Reaction(Combat004Enemy e) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 281
+   at Combat004Runner.ResetAndKOEvents() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 372
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 18
+FAIL COMBAT004 HIT REACTION down overlap still obeys forward range: System.Exception: missing contract Combat004Enemy.Reaction
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.Get(Object obj, String property) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 276
+   at Combat004Runner.Reaction(Combat004Enemy e) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 281
+   at Combat004Runner.<>c__DisplayClass27_0.<GroundedRangeRequiresOverlap>b__1() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 386
+   at Combat004Runner.Until(Combat004Core c, Func`1 predicate, Int32 max) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 23
+   at Combat004Runner.GroundedRangeRequiresOverlap() in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 386
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-hitreaction-002/verify/tests/Combat004/Runner.cs:line 18
+PASS COMBAT004 HIT REACTION deterministic fixed seeds 0..99
+PASS COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 12 pass, 6 fail
+
+--- FULL STDERR ---
+
+
+
+==== GREEN Combat004 ====
+GIT_SHA=7c77aad6e7aff8ca3b6120e4b642699de2c47a5a
+CMD: /tmp/dnf-hitreaction-002/dotnet/dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+EXIT_CODE=0
+STDOUT_SHA256=874a685a7d8fa0c22aa329c6e0034cda90137c76b50f6b37002de9189a23f998
+STDERR_SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- FULL STDOUT ---
+PASS COMBAT004 HIT REACTION per-target immutable event snapshot
+PASS COMBAT004 HIT REACTION full launch/landing/getup/protection lifecycle
+PASS COMBAT004 HIT REACTION grounded OTG once and subsequent protection
+PASS COMBAT004 HIT REACTION victim state clock freezes separately
+PASS COMBAT004 HIT REACTION KO terminal and Reset clears events
+PASS COMBAT004 HIT REACTION down overlap still obeys forward range
+PASS COMBAT004 HIT REACTION deterministic fixed seeds 0..99
+PASS COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 18 pass, 0 fail
+
+--- FULL STDERR ---
+
+
+
+==== GREEN Combat002 ====
+GIT_SHA=7c77aad6e7aff8ca3b6120e4b642699de2c47a5a
+CMD: /tmp/dnf-hitreaction-002/dotnet/dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+EXIT_CODE=0
+STDOUT_SHA256=7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+STDERR_SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- FULL STDOUT ---
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+
+--- FULL STDERR ---
+
+
+
+==== GREEN Combat007 ====
+GIT_SHA=7c77aad6e7aff8ca3b6120e4b642699de2c47a5a
+CMD: /tmp/dnf-hitreaction-002/dotnet/dotnet run --project tests/Combat007/Combat007.Tests.csproj --configuration Release
+EXIT_CODE=0
+STDOUT_SHA256=a7c36a08909f822294b7390003e7f75d9fb10536dc715d617e27762b7b5e3b61
+STDERR_SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- FULL STDOUT ---
+MATRIX 1280x720 virtual=1280.00x720.00 scale=1.0000 safeTop=0 controls=4
+PASS COMBAT007 1280x720 16:9 full safe touch matrix
+MATRIX 2400x1080 virtual=1440.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 2400x1080 ultrawide with left/right notch safe matrix
+MATRIX 1920x1080 virtual=1280.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 1920x1080 16:9 full safe matrix
+MATRIX 1080x2400 virtual=1280.00x2654.81 scale=0.8438 safeTop=80 controls=4
+PASS COMBAT007 1080x2400 portrait orientation-transition safe matrix
+PASS COMBAT007 safeArea clamp/transient fallback and invalid resolution
+PASS COMBAT007 Android-only orientation policy and portrait fallback
+PASS COMBAT007 two-finger held move and once-only ATTACK/RESET
+COMBAT007: 7 pass, 0 fail
+
+--- FULL STDERR ---
+
