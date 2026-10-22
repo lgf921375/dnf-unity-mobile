@@ -59,9 +59,13 @@ namespace DnfUnityMobile.Research
         // a full atlas texture with RECT selection: no runtime colored boxes.
         private static Texture2D RequireAtlas(string path)
         {
+            // Distinguish missing Resources asset from Sprite.Create/pivot failure.
+            // This name is a fixed source-controlled atlas path, never user input.
+            CombatStartupDiagnostics.Mark("RESOURCES_BEGIN_" + path);
             Texture2D texture = Resources.Load<Texture2D>("OriginalCombatSlice/" + path);
             if (texture == null)
                 throw new InvalidOperationException("Missing original art Resources atlas: " + path);
+            CombatStartupDiagnostics.Mark("RESOURCES_FOUND_" + path);
             return texture;
         }
 
@@ -70,6 +74,7 @@ namespace DnfUnityMobile.Research
         {
             Texture2D tex = RequireAtlas(name);
             int rows = (keys.Length + columns - 1) / columns;
+            CombatStartupDiagnostics.Mark("ATLAS_SLICE_BEGIN_" + name);
             if (tex.width != frameW * columns || tex.height != frameH * rows)
                 throw new InvalidOperationException(name + " has unexpected pixel dimensions: " +
                     tex.width + "x" + tex.height);
@@ -85,6 +90,7 @@ namespace DnfUnityMobile.Research
                 output.Add(keys[i], sprite);
                 _slicedSprites.Add(sprite);
             }
+            CombatStartupDiagnostics.Mark("ATLAS_SLICE_OK_" + name);
         }
 
         public void Initialize(Transform worldRoot, Transform playerRoot,
@@ -133,6 +139,7 @@ namespace DnfUnityMobile.Research
 
             _playerRenderer.sortingOrder = 5;
             _initialized = true;
+            CombatStartupDiagnostics.Mark("PRESENTER_ATLASES_AND_RENDERERS_READY");
         }
 
         private void MakeBackdrop(string key, int order, Color tint, float scale)
