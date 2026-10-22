@@ -4,7 +4,7 @@ Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/9
 Repo: lgf921375/dnf-unity-mobile
 Only write branch: work/unity-combat-007-landscape-ui-20261022
 Parent first Android build SHA: 0434533637bc7dacc63b8fbbd9b545019c27fb55
-Actually tested source SHA: 50ced35f04744f1e4f08ad89e3c5b59996b62427
+Actually FINAL tested source SHA: 1e460156cfee3513344993975d357e6a8f2ca678 (initial 6-case pass at 50ced35f04744f1e4f08ad89e3c5b59996b62427)
 Protected main (independently verified): ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
 
 CUSTOMER-SUPPLIED REAL PHONE BASELINE (NOT RERUN NOW):
@@ -39,7 +39,7 @@ SOURCE CHANGES (only this new branch):
 4. tests/Combat007/Combat007.Tests.csproj, Runner.cs:
    Real .NET 8 unit tests for four layouts, touch coordinate round-trips
    for four controls, nonoverlap, safeArea rectangle clamps/transient fallback,
-   and Android-only orientation request decision.
+   Android-only orientation decision, and two-finger input-frame event routing.
 5. No changes to COMBAT004Core, ThreeHitReferenceClock, source gameplay timings,
    Unity Cloud trigger mode, scene BuildSettings or Bootstrap.
 
@@ -51,7 +51,7 @@ SDK obtained via official dotnet-install.sh to private temp dir.
 MSBuild: 17.11.69+4d6a29faa
 Runtime OS: ubuntu 24.04 linux-x64
 .NET host: 8.0.32 b9a49e4a6d
-All commands run in branch checkout at SHA 50ced35f04744f1e4f08ad89e3c5b59996b62427.
+All final test commands run in branch checkout at SHA 1e460156cfee3513344993975d357e6a8f2ca678.
 Command 1:
   dotnet run --project tests/Combat007/Combat007.Tests.csproj --configuration Release
 TEST_007_EXIT=0
@@ -66,8 +66,9 @@ MATRIX 1080x2400 virtual=1280.00x2654.81 scale=0.8438 safeTop=80 controls=4
 PASS COMBAT007 1080x2400 portrait orientation-transition safe matrix
 PASS COMBAT007 safeArea clamp/transient fallback and invalid resolution
 PASS COMBAT007 Android-only orientation policy and portrait fallback
-COMBAT007: 6 pass, 0 fail
-LOG SHA-256: 38c3eef1fa74a7f9db12707fdbfdddc7f7d3142506efc556db7770505b187341
+PASS COMBAT007 two-finger held move and once-only ATTACK/RESET
+COMBAT007: 7 pass, 0 fail
+FINAL log SHA-256: a7c36a08909f822294b7390003e7f75d9fb10536dc715d617e27762b7b5e3b61
 
 Command 2:
   dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
@@ -106,7 +107,7 @@ PASS eight anchor records x both facings
 COMBAT-002: 12 pass, 0 fail
 LOG SHA-256: 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
 
-TOTAL: 29 PASS / 0 FAIL (6 NEW + 23 EXISTING), all three process exit codes 0.
+TOTAL: 30 PASS / 0 FAIL (7 NEW + 23 EXISTING), all three process exit codes 0.
 The test checkout contained zero changes to tracked source files; generated
 test bin/ outputs were untracked. No build automation or APK was triggered.
 
