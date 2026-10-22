@@ -21,6 +21,23 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     private float _keyboardAxis;
     private float _oldFixedStep;
     private int _oldTargetFps;
+    private Combat007Layout _layout;
+
+    // Android native launch orientation is also set by the Editor prebuild
+    // callback. Runtime request is a one-shot safety net for older PlayerSettings.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RequestAndroidLandscapeOnce()
+    {
+        if (Application.platform == RuntimePlatform.Android)
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
+    }
+
+    private void UpdateLayout()
+    {
+        Rect safe = Screen.safeArea; // device/screen bottom-left pixel coordinates
+        _layout = Combat007Layout.Calculate(Screen.width, Screen.height,
+            safe.x, safe.y, safe.width, safe.height);
+    }
 
     private sealed class FrameInfo
     {
@@ -35,7 +52,10 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         _oldTargetFps = Application.targetFrameRate;
         Time.fixedDeltaTime = Combat004Core.FixedStep;
         Application.targetFrameRate = 60;
+        if (Application.platform == RuntimePlatform.Android)
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
         _core = new Combat004Core();
+        UpdateLayout();
 
         var cameraObject = new GameObject("COMBAT-004 local camera");
         cameraObject.transform.SetParent(transform);
@@ -87,11 +107,58 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
 
     private void Update()
     {
+        UpdateLayout(); // Recompute after actual Android orientation/safe-area changes.
+
         _keyboardAxis = (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) -
                         (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
         if (Input.GetKeyDown(KeyCode.J) || Input.GetKeyDown(KeyCode.Space))
             _core.PressAttack();
         if (Input.GetKeyDown(KeyCode.R)) _core.Reset();
+
+        // Read all active fingers: left/right movement is held independently
+        // while a different finger taps ATTACK. Attack/Reset only on TouchPhase.Began
+        // (no IMGUI Button event repeats). Unity touch positions are bottom-left.
+        bool touchLeft = false, touchRight = false;
+        int n = Input.touchCount;
+        if (n > 0)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                    continue;
+                float x, y;
+                _layout.BottomLeftScreenToVirtual(touch.position.x, touch.position.y,
+                    out x, out y);
+                if (_layout.Left.Contains(x, y)) touchLeft = true;
+                if (_layout.Right.Contains(x, y)) touchRight = true;
+                if (touch.phase == TouchPhase.Began)
+                {
+                    if (_layout.Attack.Contains(x, y)) _core.PressAttack();
+                    else if (_layout.Reset.Contains(x, y)) _core.Reset();
+                }
+            }
+        }
+        else
+        {
+            // Unity can synthesize mouse clicks from touch. Ignore mouse while
+            // any touches are active to avoid duplicate action dispatch.
+            Vector3 mouse = Input.mousePosition;
+            float x, y;
+            _layout.BottomLeftScreenToVirtual(mouse.x, mouse.y, out x, out y);
+            if (Input.GetMouseButton(0))
+            {
+                touchLeft = _layout.Left.Contains(x, y);
+                touchRight = _layout.Right.Contains(x, y);
+            }
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (_layout.Attack.Contains(x, y)) _core.PressAttack();
+                else if (_layout.Reset.Contains(x, y)) _core.Reset();
+            }
+        }
+
+        _guiAxis = (touchRight ? 1f : 0f) - (touchLeft ? 1f : 0f);
         _displayFps = Mathf.Lerp(_displayFps, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.06f);
     }
 
@@ -206,40 +273,57 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         sr.sortingOrder = order;
     }
 
+    private static Rect ToGuiRect(Combat007Rect r)
+    {
+        return new Rect(r.X, r.Y, r.Width, r.Height);
+    }
+
+    private static void ControlVisual(Combat007Rect box, string title, bool pressed)
+    {
+        Color previous = GUI.color;
+        GUI.color = pressed ? new Color(0.75f, 1f, 0.72f, 1f) :
+            new Color(0.92f, 0.95f, 1f, 1f);
+        GUI.Box(ToGuiRect(box), title);
+        GUI.color = previous;
+    }
+
     private void OnGUI()
     {
         if (_core == null) return;
-        Matrix4x4 old = GUI.matrix;
-        GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f,
-            Screen.height / 720f, 1f));
-        GUI.Box(new Rect(16, 12, 870, 228), "COMBAT-004 / ORIGINAL Unity 6 local scene");
-        GUI.Label(new Rect(36, 48, 830, 28), "STAGE " + _core.Clock.Stage
-            + "    FRAME " + _previousFrame + "    elapsed " + _core.Clock.Elapsed.ToString("F3")
-            + "    QUEUE " + _core.Clock.QueuedFor.ToString("F3"));
-        GUI.Label(new Rect(36, 82, 830, 28), "HIT WINDOW " + _core.Clock.IsHitWindow
-            + "    ATTACK INSTANCE " + _core.AttackInstance
-            + "    ATTACKER HITSTOP " + _core.AttackerFreeze.ToString("F3"));
-        GUI.Label(new Rect(36, 115, 830, 28), "TARGET 101   HP " + _core.Enemies[0].Hp
-            + "    " + _core.Enemies[0].State
-            + "   hitstop " + _core.Enemies[0].Freeze.ToString("F3")
-            + "   hits " + _core.Enemies[0].Hits);
-        GUI.Label(new Rect(36, 147, 830, 28), "TARGET 102   HP " + _core.Enemies[1].Hp
-            + "    " + _core.Enemies[1].State
-            + "   hitstop " + _core.Enemies[1].Freeze.ToString("F3")
-            + "   hits " + _core.Enemies[1].Hits);
-        GUI.Label(new Rect(36, 180, 830, 28), "CONTACTS " + _core.TotalContacts
-            + "     FPS approx " + _displayFps.ToString("F0")
-            + "     LAST " + _core.LastEvent);
-        GUI.Label(new Rect(40, 245, 920, 28), "A/D or arrows MOVE  |  J/SPACE ATTACK repeatedly  |  R RESET");
-
-        bool left = GUI.RepeatButton(new Rect(26, 580, 170, 102), "LEFT");
-        bool right = GUI.RepeatButton(new Rect(210, 580, 170, 102), "RIGHT");
-        _guiAxis = (right ? 1f : 0f) - (left ? 1f : 0f);
-        if (GUI.Button(new Rect(980, 580, 170, 102), "ATTACK"))
-            _core.PressAttack();
-        if (GUI.Button(new Rect(1090, 24, 158, 84), "RESET"))
-            _core.Reset();
-        GUI.matrix = old;
+        UpdateLayout();
+        Matrix4x4 previous = GUI.matrix;
+        // One scale for X and Y. Translate to Screen.safeArea (incl. notch).
+        GUI.matrix = Matrix4x4.TRS(
+            new Vector3(_layout.OriginX, _layout.OriginTopY, 0f),
+            Quaternion.identity, new Vector3(_layout.Scale, _layout.Scale, 1f));
+        GUI.Box(ToGuiRect(_layout.Hud), "COMBAT-007 / LANDSCAPE TEST • ORIGINAL GEOMETRY");
+        float left = _layout.Hud.X + 14f;
+        float width = _layout.Hud.Width - 24f;
+        GUI.Label(new Rect(left, 48, width, 25), "STAGE " + _core.Clock.Stage
+            + "   FRAME " + _previousFrame + "   elapsed " + _core.Clock.Elapsed.ToString("F3")
+            + "   BUFFER " + _core.Clock.QueuedFor.ToString("F3"));
+        GUI.Label(new Rect(left, 80, width, 25), "HIT WINDOW " + _core.Clock.IsHitWindow
+            + "   INSTANCE " + _core.AttackInstance
+            + "   ATTACKER FREEZE " + _core.AttackerFreeze.ToString("F3"));
+        GUI.Label(new Rect(left, 112, width, 25), "ENEMY 101   HP " + _core.Enemies[0].Hp
+            + "   " + _core.Enemies[0].State
+            + "   FREEZE " + _core.Enemies[0].Freeze.ToString("F3"));
+        GUI.Label(new Rect(left, 144, width, 25), "ENEMY 102   HP " + _core.Enemies[1].Hp
+            + "   " + _core.Enemies[1].State
+            + "   FREEZE " + _core.Enemies[1].Freeze.ToString("F3"));
+        GUI.Label(new Rect(left, 177, width, 25), "CONTACTS " + _core.TotalContacts
+            + "   FPS approx " + _displayFps.ToString("F0")
+            + "   " + _core.LastEvent);
+        GUI.Label(ToGuiRect(_layout.Hint), Combat007Layout.NeedsLandscapeRotation(
+            Screen.width, Screen.height)
+            ? "Waiting for Android landscape orientation..."
+            : "MOVE: left/right   ATTACK: tap 3 times   RESET: upper right");
+        // Drawing only: touch handling is done in Update, supporting two fingers.
+        ControlVisual(_layout.Left, "LEFT", _guiAxis < 0f);
+        ControlVisual(_layout.Right, "RIGHT", _guiAxis > 0f);
+        ControlVisual(_layout.Attack, "ATTACK", false);
+        ControlVisual(_layout.Reset, "RESET", false);
+        GUI.matrix = previous;
     }
 
     private void OnDestroy()
