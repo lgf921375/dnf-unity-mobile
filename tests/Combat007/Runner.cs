@@ -86,6 +86,34 @@ public static class Combat007LayoutTests
         Assert(!Combat007Layout.NeedsLandscapeRotation(2400,1080), "landscape should not show portrait hint");
         Assert(!Combat007Layout.NeedsLandscapeRotation(1280,720), "16:9 landscape misclassified");
     }
+    private static void SimultaneousTouchAndNoRepeat()
+    {
+        var l=Combat007Layout.Calculate(2400,1080,120,0,2160,1080);
+        float leftX,leftY,attackX,attackY,rightX,rightY,resetX,resetY;
+        l.VirtualToBottomLeftScreen(l.Left.X+50,l.Left.Y+55,out leftX,out leftY);
+        l.VirtualToBottomLeftScreen(l.Attack.X+90,l.Attack.Y+56,out attackX,out attackY);
+        l.VirtualToBottomLeftScreen(l.Right.X+50,l.Right.Y+55,out rightX,out rightY);
+        l.VirtualToBottomLeftScreen(l.Reset.X+60,l.Reset.Y+35,out resetX,out resetY);
+        var frame=new Combat007PointerFrame();
+        l.AddPointer(ref frame,leftX,leftY,true,true);
+        l.AddPointer(ref frame,attackX,attackY,true,true);
+        Assert(frame.MoveAxis==-1f && frame.AttackDown && !frame.ResetDown,
+            "left hold plus independent attack finger");
+        frame=new Combat007PointerFrame();
+        l.AddPointer(ref frame,leftX,leftY,true,false);
+        l.AddPointer(ref frame,attackX,attackY,true,false);
+        Assert(frame.MoveAxis==-1f && !frame.AttackDown,
+            "held ATTACK must not repeat action");
+        frame=new Combat007PointerFrame();
+        l.AddPointer(ref frame,rightX,rightY,true,true);
+        l.AddPointer(ref frame,resetX,resetY,true,true);
+        Assert(frame.MoveAxis==1f && frame.ResetDown && !frame.AttackDown,
+            "right hold and separately tapped reset");
+        frame=new Combat007PointerFrame();
+        l.AddPointer(ref frame,leftX,leftY,false,true);
+        Assert(frame.MoveAxis==0f && !frame.AttackDown, "ended touch must not trigger");
+    }
+
     public static int Main()
     {
         Test("1280x720 16:9 full safe touch matrix",()=>Scenario("1280x720",1280,720,0,0,1280,720,false,1f));
@@ -96,6 +124,7 @@ public static class Combat007LayoutTests
             ()=>Scenario("1080x2400",1080,2400,0,80,1080,2240,true,0.84375f));
         Test("safeArea clamp/transient fallback and invalid resolution",SafeRectClampAndFallback);
         Test("Android-only orientation policy and portrait fallback",OrientationDecision);
+        Test("two-finger held move and once-only ATTACK/RESET",SimultaneousTouchAndNoRepeat);
         Console.WriteLine("COMBAT007: "+_pass+" pass, "+_fail+" fail");
         return _fail==0?0:1;
     }
