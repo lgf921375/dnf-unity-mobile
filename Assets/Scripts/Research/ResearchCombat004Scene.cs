@@ -13,6 +13,8 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     private readonly SpriteRenderer[] _enemies = new SpriteRenderer[2];
     private readonly Transform[] _enemyRoots = new Transform[2];
     private Combat004Core _core;
+    private CombatSpritePresenter _spritePresenter;
+    private bool _debugHud; // F1 or compact on-screen toggle; OFF by default.
     private Transform _playerRoot;
     private SpriteRenderer _playerRenderer;
     private string _previousFrame = "";
@@ -67,24 +69,8 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         camera.backgroundColor = new Color(0.06f, 0.09f, 0.17f);
         cameraObject.tag = "MainCamera";
 
-        MakePanel("Floor", 0f, -2.65f, 18f, 1.0f,
-            new Color32(46, 63, 70, 255), -4);
-        MakePanel("Battle area", 0f, -2.0f, 18f, 0.22f,
-            new Color32(83, 118, 134, 255), -3);
-        MakePanel("Horizon", 0f, 1.0f, 18f, 0.06f,
-            new Color32(66, 115, 150, 255), -4);
-
-        // Distinct dimensions and trims: all generated locally at runtime.
-        CreateFrame("idle", 78, 110, 39f, 109f, 0);
-        CreateFrame("a1_1", 82, 115, 36.5f, 114.2f, 1);
-        CreateFrame("a1_2", 99, 108, 54f, 108.2f, 2);
-        CreateFrame("a1_3", 106, 112, 49f, 111.7f, 3);
-        CreateFrame("a2_1", 88, 114, 44f, 113.8f, 4);
-        CreateFrame("a2_2", 109, 105, 58.5f, 105.4f, 5);
-        CreateFrame("a2_3", 105, 116, 48f, 115.8f, 6);
-        CreateFrame("a3_1", 112, 123, 32.5f, 123.2f, 7);
-        CreateFrame("a3_2", 116, 99, 70f, 99.2f, 8);
-
+        // ART-SLICE-001: all visible character/scene frames now come from
+        // original checked-in PNG atlases, NOT CreateFrame/MakePanel placeholders.
         _playerRoot = new GameObject("ORIGINAL Blue Attacker [foot origin]").transform;
         _playerRoot.SetParent(transform);
         GameObject spriteChild = new GameObject("Centered frame + anchor offset");
@@ -96,12 +82,16 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         for (int i = 0; i < 2; i++)
         {
             int id = 101 + i;
-            _enemyRoots[i] = new GameObject("ORIGINAL Enemy " + id).transform;
+            _enemyRoots[i] = new GameObject("Original Mossling " + id).transform;
             _enemyRoots[i].SetParent(transform);
-            _enemies[i] = _enemyRoots[i].gameObject.AddComponent<SpriteRenderer>();
-            _enemies[i].sprite = DrawEnemySprite(i);
-            _enemies[i].sortingOrder = 2;
+            GameObject frame = new GameObject("Enemy atlas frame / centered-pivot foot offset");
+            frame.transform.SetParent(_enemyRoots[i], false);
+            frame.transform.localPosition = new Vector3(0f,0f,.12f);
+            _enemies[i] = frame.AddComponent<SpriteRenderer>();
         }
+        _spritePresenter = gameObject.AddComponent<CombatSpritePresenter>();
+        _spritePresenter.Initialize(transform, _playerRoot, _playerRenderer,
+            _enemyRoots, _enemies);
         RenderCombat();
     }
 
@@ -113,7 +103,8 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
                         (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
         if (Input.GetKeyDown(KeyCode.J) || Input.GetKeyDown(KeyCode.Space))
             _core.PressAttack();
-        if (Input.GetKeyDown(KeyCode.R)) _core.Reset();
+        if (Input.GetKeyDown(KeyCode.R)) ResetScene();
+        if (Input.GetKeyDown(KeyCode.F1)) _debugHud = !_debugHud;
 
         // Read all active fingers: left/right movement is held independently
         // while a different finger taps ATTACK. Attack/Reset only on TouchPhase.Began
@@ -139,7 +130,7 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
                 Input.GetMouseButton(0), Input.GetMouseButtonDown(0));
         }
         if (pointers.AttackDown) _core.PressAttack();
-        else if (pointers.ResetDown) _core.Reset();
+        else if (pointers.ResetDown) ResetScene();
         _guiAxis = pointers.MoveAxis;
         _displayFps = Mathf.Lerp(_displayFps, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.06f);
     }
@@ -151,27 +142,25 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         RenderCombat();
     }
 
+    private void ResetScene()
+    {
+        _core.Reset();
+        if (_spritePresenter != null) _spritePresenter.ResetVisualOnly();
+    }
+
     private void RenderCombat()
     {
         _playerRoot.position = new Vector3(_core.PlayerX, -1.90f, 0f);
-        string name = _core.Clock.FrameKey;
-        FrameInfo f = _frames[name];
-        _playerRenderer.flipX = !_core.FacingRight;
-        ReferenceSpriteAlignment.ApplyCenteredSprite(_playerRenderer, f.Sprite,
-            f.Width, f.Height, f.AnchorX, f.AnchorY, Ppu);
-        // Apply on EVERY update, including when flipX changes but frame key does not.
-        _playerRenderer.color = _core.AttackerFreeze > 0f
-            ? new Color(1f, 0.96f, 0.4f) : Color.white;
-        _previousFrame = name;
-
         for (int i = 0; i < _enemies.Length; i++)
         {
             Combat004Enemy e = _core.Enemies[i];
-            _enemyRoots[i].position = new Vector3(e.X, -1.40f + e.Lane * 0.32f + e.Height, -0.1f);
-            _enemies[i].color = e.Hp == 0 ? Color.gray
-                : e.Freeze > 0f ? Color.yellow
-                : e.Stun > 0f ? new Color(1f, 0.52f, 0.45f) : Color.white;
+            // Foot origin and shadow share the lane; air height shifts body up.
+            _enemyRoots[i].position = new Vector3(
+                e.X, -1.90f + e.Lane * 0.32f + e.Height, -0.1f);
         }
+        bool isMoving = Mathf.Abs(_guiAxis + _keyboardAxis) > 0.01f;
+        _spritePresenter.Present(_core, isMoving, Time.fixedDeltaTime);
+        _previousFrame = _core.Clock.FrameKey;
     }
 
     private void CreateFrame(string key, int w, int h, float ax, float ay, int pose)
@@ -278,28 +267,38 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         GUI.matrix = Matrix4x4.TRS(
             new Vector3(_layout.OriginX, _layout.OriginTopY, 0f),
             Quaternion.identity, new Vector3(_layout.Scale, _layout.Scale, 1f));
-        GUI.Box(ToGuiRect(_layout.Hud), "COMBAT-007 / LANDSCAPE TEST • ORIGINAL GEOMETRY");
-        float left = _layout.Hud.X + 14f;
-        float width = _layout.Hud.Width - 24f;
-        GUI.Label(new Rect(left, 48, width, 25), "STAGE " + _core.Clock.Stage
-            + "   FRAME " + _previousFrame + "   elapsed " + _core.Clock.Elapsed.ToString("F3")
-            + "   BUFFER " + _core.Clock.QueuedFor.ToString("F3"));
-        GUI.Label(new Rect(left, 80, width, 25), "HIT WINDOW " + _core.Clock.IsHitWindow
-            + "   INSTANCE " + _core.AttackInstance
-            + "   ATTACKER FREEZE " + _core.AttackerFreeze.ToString("F3"));
-        GUI.Label(new Rect(left, 112, width, 25), "ENEMY 101   HP " + _core.Enemies[0].Hp
-            + "   " + _core.Enemies[0].State
-            + "   FREEZE " + _core.Enemies[0].Freeze.ToString("F3"));
-        GUI.Label(new Rect(left, 144, width, 25), "ENEMY 102   HP " + _core.Enemies[1].Hp
-            + "   " + _core.Enemies[1].State
-            + "   FREEZE " + _core.Enemies[1].Freeze.ToString("F3"));
-        GUI.Label(new Rect(left, 177, width, 25), "CONTACTS " + _core.TotalContacts
-            + "   FPS approx " + _displayFps.ToString("F0")
-            + "   " + _core.LastEvent);
+        // An unobtrusive HUD keeps the action readable on a phone.
+        GUI.Box(new Rect(20f,14f,380f,76f), "AETHER WARD • STAFF MAGE");
+        GUI.Label(new Rect(36f,42f,340f,26f), "MOSS 101  " + _core.Enemies[0].Hp +
+            "/100    MOSS 102  " + _core.Enemies[1].Hp + "/100");
+        if (GUI.Button(new Rect(_layout.VirtualWidth - 102f, 116f, 80f, 42f),
+            _debugHud ? "HIDE" : "DEBUG"))
+            _debugHud = !_debugHud;
+        if (_debugHud)
+        {
+            GUI.Box(ToGuiRect(_layout.Hud), "COMBAT ART SLICE / DEBUG");
+            float left = _layout.Hud.X + 14f;
+            float width = _layout.Hud.Width - 24f;
+            GUI.Label(new Rect(left, 48, width, 25), "STAGE " + _core.Clock.Stage
+                + "   FRAME " + _previousFrame + "   elapsed " + _core.Clock.Elapsed.ToString("F3")
+                + "   BUFFER " + _core.Clock.QueuedFor.ToString("F3"));
+            GUI.Label(new Rect(left, 80, width, 25), "HIT WINDOW " + _core.Clock.IsHitWindow
+                + "   INSTANCE " + _core.AttackInstance
+                + "   ATTACKER FREEZE " + _core.AttackerFreeze.ToString("F3"));
+            GUI.Label(new Rect(left, 112, width, 25), "ENEMY 101   HP " + _core.Enemies[0].Hp
+                + "   " + _core.Enemies[0].State
+                + "   FREEZE " + _core.Enemies[0].Freeze.ToString("F3"));
+            GUI.Label(new Rect(left, 144, width, 25), "ENEMY 102   HP " + _core.Enemies[1].Hp
+                + "   " + _core.Enemies[1].State
+                + "   FREEZE " + _core.Enemies[1].Freeze.ToString("F3"));
+            GUI.Label(new Rect(left, 177, width, 25), "CONTACTS " + _core.TotalContacts
+                + "   FPS approx " + _displayFps.ToString("F0")
+                + "   " + _core.LastEvent);
+        }
         GUI.Label(ToGuiRect(_layout.Hint), Combat007Layout.NeedsLandscapeRotation(
             Screen.width, Screen.height)
             ? "Waiting for Android landscape orientation..."
-            : "MOVE: left/right   ATTACK: tap 3 times   RESET: upper right");
+            : "Move / Strike 1 - 2 - 3   •   F1 DEBUG");
         // Drawing only: touch handling is done in Update, supporting two fingers.
         ControlVisual(_layout.Left, "LEFT", _guiAxis < 0f);
         ControlVisual(_layout.Right, "RIGHT", _guiAxis > 0f);
