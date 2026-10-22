@@ -24,6 +24,10 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     private float _oldFixedStep;
     private int _oldTargetFps;
     private Combat007Layout _layout;
+    private bool _startupComplete;
+    private bool _firstSceneUpdateReported;
+    private bool _firstSceneFixedReported;
+    private bool _firstSceneGuiReported;
 
     // Android native launch orientation is also set by the Editor prebuild
     // callback. Runtime request is a one-shot safety net for older PlayerSettings.
@@ -50,14 +54,19 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
 
     private void Awake()
     {
+        CombatStartupDiagnostics.Mark("SCENE_AWAKE_ENTER");
         _oldFixedStep = Time.fixedDeltaTime;
+        try
+        {
         _oldTargetFps = Application.targetFrameRate;
         Time.fixedDeltaTime = Combat004Core.FixedStep;
         Application.targetFrameRate = 60;
         if (Combat007Layout.ShouldLockLandscapeOnAndroid(Application.platform == RuntimePlatform.Android))
             Screen.orientation = ScreenOrientation.LandscapeLeft;
         _core = new Combat004Core();
+        CombatStartupDiagnostics.Mark("CORE_READY");
         UpdateLayout();
+        CombatStartupDiagnostics.Mark("LAYOUT_READY");
 
         var cameraObject = new GameObject("COMBAT-004 local camera");
         cameraObject.transform.SetParent(transform);
@@ -68,6 +77,7 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0.06f, 0.09f, 0.17f);
         cameraObject.tag = "MainCamera";
+        CombatStartupDiagnostics.Mark("CAMERA_READY");
 
         // ART-SLICE-001: all visible character/scene frames now come from
         // original checked-in PNG atlases, NOT CreateFrame/MakePanel placeholders.
@@ -89,15 +99,39 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
             frame.transform.localPosition = new Vector3(0f,0f,.12f);
             _enemies[i] = frame.AddComponent<SpriteRenderer>();
         }
+        CombatStartupDiagnostics.Mark("ACTORS_READY");
         _spritePresenter = gameObject.AddComponent<CombatSpritePresenter>();
+        CombatStartupDiagnostics.Mark("PRESENTER_CREATED");
         _spritePresenter.Initialize(transform, _playerRoot, _playerRenderer,
             _enemyRoots, _enemies);
+        CombatStartupDiagnostics.Mark("PRESENTER_INITIALIZED");
         RenderCombat();
+        if (_playerRenderer.sprite == null ||
+            _enemies[0].sprite == null || _enemies[1].sprite == null)
+            throw new InvalidOperationException("RequiredSpriteNotAssigned");
+        CombatStartupDiagnostics.Mark("FIRST_SPRITES_ASSIGNED");
+        _startupComplete = true;
+        CombatStartupDiagnostics.Ready();
+        }
+        catch (Exception ex)
+        {
+            // Independent pre-scene diagnostic remains when this script disables.
+            CombatStartupDiagnostics.Fail("SCENE_AWAKE", ex);
+            enabled = false;
+        }
     }
 
     private void Update()
     {
-        UpdateLayout(); // Recompute after actual Android orientation/safe-area changes.
+        if (!_startupComplete) return;
+        try
+        {
+            if (!_firstSceneUpdateReported)
+            {
+                _firstSceneUpdateReported = true;
+                CombatStartupDiagnostics.Mark("SCENE_FIRST_UPDATE");
+            }
+            UpdateLayout(); // Recompute after actual Android orientation/safe-area changes.
 
         _keyboardAxis = (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) -
                         (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
@@ -133,17 +167,37 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         else if (pointers.ResetDown) ResetScene();
         _guiAxis = pointers.MoveAxis;
         _displayFps = Mathf.Lerp(_displayFps, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.06f);
+        }
+        catch (Exception ex)
+        {
+            CombatStartupDiagnostics.Fail("SCENE_UPDATE", ex);
+            enabled = false;
+        }
     }
 
     private void FixedUpdate()
     {
-        _core.Move(Mathf.Clamp(_guiAxis + _keyboardAxis, -1f, 1f), Time.fixedDeltaTime);
+        if (!_startupComplete) return;
+        try
+        {
+            if (!_firstSceneFixedReported)
+            {
+                _firstSceneFixedReported = true;
+                CombatStartupDiagnostics.Mark("SCENE_FIRST_FIXED");
+            }
+            _core.Move(Mathf.Clamp(_guiAxis + _keyboardAxis, -1f, 1f), Time.fixedDeltaTime);
         _core.Tick(Time.fixedDeltaTime);
         // HIT-REACTION: this is the ONLY consumption point for this 60 Hz tick.
         // Consume before next core.Tick or PressAttack can clear the snapshot.
         // Presenter never applies HP damage, nor generates fake contacts.
         _spritePresenter.ConsumeHitEvents(_core.DrainHitEvents(), _core);
         RenderCombat();
+        }
+        catch (Exception ex)
+        {
+            CombatStartupDiagnostics.Fail("SCENE_FIXED", ex);
+            enabled = false;
+        }
     }
 
     private void ResetScene()
@@ -264,9 +318,11 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
 
     private void OnGUI()
     {
-        if (_core == null) return;
-        UpdateLayout();
+        if (!_startupComplete) return;
         Matrix4x4 previous = GUI.matrix;
+        try
+        {
+            UpdateLayout();
         // One scale for X and Y. Translate to Screen.safeArea (incl. notch).
         GUI.matrix = Matrix4x4.TRS(
             new Vector3(_layout.OriginX, _layout.OriginTopY, 0f),
@@ -308,7 +364,22 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         ControlVisual(_layout.Right, "RIGHT", _guiAxis > 0f);
         ControlVisual(_layout.Attack, "ATTACK", false);
         ControlVisual(_layout.Reset, "RESET", false);
-        GUI.matrix = previous;
+            if (!_firstSceneGuiReported && Event.current != null &&
+                Event.current.type == EventType.Repaint)
+            {
+                _firstSceneGuiReported = true;
+                CombatStartupDiagnostics.SceneGuiPainted();
+            }
+        }
+        catch (Exception ex)
+        {
+            CombatStartupDiagnostics.Fail("SCENE_ONGUI", ex);
+            enabled = false;
+        }
+        finally
+        {
+            GUI.matrix = previous;
+        }
     }
 
     private void OnDestroy()
