@@ -105,9 +105,12 @@ namespace DnfUnityMobile.Research
                     return ((int)(Math.Max(0f, poseTime) / .20f) % 2) == 0
                         ? "down0" : "down1";
                 case CombatReactionPhase.GETUP:
-                    return "down1"; // no dedicated getup key in current enemy atlas
+                    // poseTime is presenter-local time since this phase began.
+                    // The authoritative GETUP lifetime remains unchanged (.16s).
+                    return poseTime < CombatReactionContract.GetupSeconds * .5f
+                        ? "getup0" : "getup1";
                 case CombatReactionPhase.INVUL:
-                    return "idle0"; // readable via distinct blue invulnerability tint
+                    return "invul0"; // distinct raised-shield pose AND blue tint
                 case CombatReactionPhase.HIT:
                     return "hurt" + ((int)(Math.Max(0f, poseTime) / .18f) % 2);
                 default:
