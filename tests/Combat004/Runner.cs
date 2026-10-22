@@ -268,8 +268,157 @@ public static class Combat004Runner
         }
     }
 
+
+    // HIT-REACTION-001: executable RED tests; reflection allows compilation
+    // against the pre-feature core and makes missing contracts fail at runtime.
+    private static object Get(object obj, string property)
+    {
+        var p = obj.GetType().GetProperty(property);
+        Require(p != null, "missing contract " + obj.GetType().Name + "." + property);
+        return p.GetValue(obj);
+    }
+    private static int Number(object obj, string property) => Convert.ToInt32(Get(obj, property));
+    private static string Reaction(Combat004Enemy e) => Get(e, "Reaction").ToString();
+    private static System.Collections.Generic.List<object> Events(Combat004Core c)
+    {
+        var result = new System.Collections.Generic.List<object>();
+        foreach (object e in (System.Collections.IEnumerable)Get(c, "HitEvents"))
+            result.Add(e);
+        return result;
+    }
+    private static void LaunchBoth(Combat004Core c)
+    {
+        c.PressAttack();
+        Until(c, () => c.TotalContacts == 2, 25);
+        c.PressAttack();
+        Until(c, () => c.Clock.Stage == 2, 50);
+        c.PressAttack();
+        Until(c, () => c.Clock.Stage == 3, 60);
+        Until(c, () => c.TotalContacts == 6, 100);
+    }
+    private static void PerTargetHitEvents()
+    {
+        var c = new Combat004Core();
+        c.PressAttack();
+        Until(c, () => c.TotalContacts == 2, 20);
+        var events = Events(c);
+        Require(events.Count == 2, "same-frame two event snapshot");
+        Require(Number(events[0],"TargetId") != Number(events[1],"TargetId"), "unique target ids");
+        foreach (var evt in events)
+        {
+            Require(Number(evt,"AttackInstance") == 1 && Number(evt,"Stage") == 1, "event attack key");
+            Require(Number(evt,"Damage") == 10, "event damage must match HP transaction");
+            Require((float)Get(evt, "RequestedFreeze") > 0f, "freeze event payload");
+        }
+        Require(c.Enemies[0].Hp == 90 && c.Enemies[1].Hp == 90, "HP exactly once per target");
+        c.Tick(Combat004Core.FixedStep);
+        Require(Events(c).Count == 0, "no stale events on next frozen tick");
+    }
+    private static void FullReactionLifecycle()
+    {
+        var c = new Combat004Core();
+        LaunchBoth(c);
+        var states = new System.Collections.Generic.List<string>();
+        string last = "";
+        for(int i=0;i<180;i++)
+        {
+            string state = Reaction(c.Enemies[0]);
+            if(state != last) { states.Add(state); last=state; }
+            if(state == "READY") break;
+            c.Tick(Combat004Core.FixedStep);
+        }
+        string joined = string.Join(",",states);
+        foreach(string state in new[]{"AIR_RISE","AIR_FALL","DOWN","GETUP","INVUL","READY"})
+            Require(states.Contains(state), "missing lifecycle "+state+" in "+joined);
+        Require(c.Enemies[0].Height == 0f, "foot height on ground");
+    }
+    private static void OnceOnlyOtgWithProtection()
+    {
+        var c = new Combat004Core();
+        LaunchBoth(c);
+        c.Enemies[1].Hp = 0; // isolate target 101 from the second victim
+        Until(c, () => c.Clock.Stage == 0, 90);
+        Until(c, () => Reaction(c.Enemies[0]) == "DOWN", 100);
+        c.PressAttack();
+        Until(c, () => c.Enemies[0].Hits == 4, 18);
+        Require(c.Enemies[0].Hp == 30, "OTG low hit must damage exactly once");
+        var events=Events(c);
+        Require(events.Count == 1 && (bool)Get(events[0],"IsOtg"), "OTG event flag");
+        Require((bool)Get(c.Enemies[0],"OtgConsumed"), "OTG usage tracked");
+        c.PressAttack(); // chain to stage 2 while victim is bounced/protected
+        for(int i=0;i<35;i++) c.Tick(Combat004Core.FixedStep);
+        Require(c.Enemies[0].Hits == 4, "protected victim accepted extra grounded hit");
+    }
+    private static void FreezePausesReactionClock()
+    {
+        var c = new Combat004Core();
+        LaunchBoth(c);
+        string state=Reaction(c.Enemies[0]);
+        float height=c.Enemies[0].Height, speed=c.Enemies[0].VerticalSpeed;
+        Require(state == "AIR_RISE" && speed > 0f, "launch immediate reaction");
+        for(int i=0;i<6;i++) c.Tick(Combat004Core.FixedStep);
+        Close(c.Enemies[0].Height,height,"victim motion frozen during hitstop");
+        Require(Reaction(c.Enemies[0]) == state, "victim phase must freeze");
+        c.Tick(Combat004Core.FixedStep);
+        Require(c.Enemies[0].Height > height, "launch resumes after freeze");
+    }
+    private static void ResetAndKOEvents()
+    {
+        var c=new Combat004Core();
+        c.Enemies[0].Hp=10;
+        c.Enemies[1].Hp=0;
+        c.PressAttack();
+        Until(c,()=>c.TotalContacts==1,20);
+        Require(Reaction(c.Enemies[0])=="KO","KO must stop reaction");
+        Require(Events(c).Count==1,"KO hit event retained");
+        for(int i=0;i<10;i++) c.Tick(Combat004Core.FixedStep);
+        Require(Reaction(c.Enemies[0])=="KO","KO remains terminal");
+        c.Reset();
+        Require(Events(c).Count==0,"reset must clear event snapshot");
+        Require(Reaction(c.Enemies[0])=="READY","reset to READY");
+    }
+    private static void GroundedRangeRequiresOverlap()
+    {
+        var c=new Combat004Core();
+        LaunchBoth(c);
+        c.Enemies[1].Hp=0;
+        Until(c,()=>c.Clock.Stage==0,90);
+        Until(c,()=>Reaction(c.Enemies[0])=="DOWN",100);
+        c.Enemies[0].X = c.PlayerX+Combat004Core.Range+0.2f;
+        c.PressAttack();
+        for(int i=0;i<15;i++) c.Tick(Combat004Core.FixedStep);
+        Require(c.Enemies[0].Hits==3,"off-range low hit illegally hit down victim");
+    }
+    private static void HundredSeedDeterminism()
+    {
+        for(int seed=0;seed<100;seed++)
+        {
+            var random=new Random(seed);
+            float dx=0.2f+(float)random.NextDouble()*2.7f;
+            var a=new Combat004Core(); var b=new Combat004Core();
+            foreach(var c in new[]{a,b})
+            {
+                c.Enemies[0].X=c.PlayerX+dx;
+                c.Enemies[1].X=c.PlayerX+dx+.05f;
+                c.PressAttack();
+                for(int i=0;i<25;i++) c.Tick(Combat004Core.FixedStep);
+            }
+            Require(a.Enemies[0].Hp==b.Enemies[0].Hp &&
+                    a.Enemies[1].Hp==b.Enemies[1].Hp &&
+                    a.TotalContacts==b.TotalContacts,
+                    "fixed seed diverged seed "+seed);
+        }
+    }
+
     public static int Main()
     {
+        Check("HIT REACTION per-target immutable event snapshot", PerTargetHitEvents);
+        Check("HIT REACTION full launch/landing/getup/protection lifecycle", FullReactionLifecycle);
+        Check("HIT REACTION grounded OTG once and subsequent protection", OnceOnlyOtgWithProtection);
+        Check("HIT REACTION victim state clock freezes separately", FreezePausesReactionClock);
+        Check("HIT REACTION KO terminal and Reset clears events", ResetAndKOEvents);
+        Check("HIT REACTION down overlap still obeys forward range", GroundedRangeRequiresOverlap);
+        Check("HIT REACTION deterministic fixed seeds 0..99", HundredSeedDeterminism);
         Check("COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path", RejectOversizeTicksWithoutMutation);
         Check("COMBAT006 55/90ms whole-tick hitstop quantization", FreezeQuantizationContract);
         Check("COMBAT006 freely steered attack-facing contract", ImmediateFacingContract);
