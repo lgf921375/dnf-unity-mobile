@@ -28,7 +28,7 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RequestAndroidLandscapeOnce()
     {
-        if (Application.platform == RuntimePlatform.Android)
+        if (Combat007Layout.ShouldLockLandscapeOnAndroid(Application.platform == RuntimePlatform.Android))
             Screen.orientation = ScreenOrientation.LandscapeLeft;
     }
 
@@ -52,7 +52,7 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         _oldTargetFps = Application.targetFrameRate;
         Time.fixedDeltaTime = Combat004Core.FixedStep;
         Application.targetFrameRate = 60;
-        if (Application.platform == RuntimePlatform.Android)
+        if (Combat007Layout.ShouldLockLandscapeOnAndroid(Application.platform == RuntimePlatform.Android))
             Screen.orientation = ScreenOrientation.LandscapeLeft;
         _core = new Combat004Core();
         UpdateLayout();
