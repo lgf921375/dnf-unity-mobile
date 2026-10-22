@@ -122,12 +122,19 @@ namespace DnfUnityMobile.Research
             }
         }
 
-        // FixedStep cadence: no network/world clock dependencies. Large external dt should be
-        // subdivided by caller. This makes temporal window checks deterministic.
+        // COMBAT-006 invariant: this *combat core* accepts one 60 Hz step (or less).
+        // Callers must issue repeated fixed steps, never forward a large render-frame
+        // delta. The clock itself supports larger dt, but this core samples damage
+        // only once per Tick and cannot resolve intermediate attack-stage hit events.
+        // Do not claim equivalent single-step 0.12/0.20 s damage behavior.
+        // Deterministic hitstop intentionally rounds UP to whole 60 Hz ticks:
+        // .055 s freezes 4 ticks, .09 s freezes 6 ticks; no fractional carry.
         public void Tick(float dt)
         {
-            if (float.IsNaN(dt) || float.IsInfinity(dt) || dt < 0f)
-                throw new ArgumentOutOfRangeException(nameof(dt));
+            if (float.IsNaN(dt) || float.IsInfinity(dt) || dt < 0f ||
+                dt > FixedStep + 0.000001f)
+                throw new ArgumentOutOfRangeException(nameof(dt),
+                    "Combat004Core requires <= 1/60s finite simulation increments.");
             // Victims tick independently; each freeze counter is real and observable.
             for (int i = 0; i < Enemies.Length; i++) Enemies[i].Tick(dt);
             if (AttackerFreeze > 0f)
