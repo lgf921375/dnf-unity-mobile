@@ -83,7 +83,8 @@ public static class ArtSliceRunner
             Need(colorCount>60,section+" "+a.Keys[i]+" is blank / tiny: "+colorCount);
             hashes.Add(Sha(frame));
         }
-        Need(hashes.Count>=expectedFrames-2,section+" too many repeated frame pixels: "+hashes.Count);
+        Need(hashes.Count >= (section=="enemy" ? expectedFrames : expectedFrames-2),
+            section+" too many repeated frame pixels: "+hashes.Count);
         Console.WriteLine("ASSET "+section+" "+a.W+"x"+a.H+" tiles="+a.Keys.Length+
             " distinct="+hashes.Count+" real_pixel_bytes="+a.Raw.Length);
     }
@@ -184,7 +185,7 @@ public static class ArtSliceRunner
         using var doc=JsonDocument.Parse(File.ReadAllText(map));
         var root=doc.RootElement;
         Test("PNG atlas: original staff mage 19 frames",()=>InspectAtlas("player",root.GetProperty("player"),19));
-        Test("PNG atlas: original mossling 12 frames",()=>InspectAtlas("enemy",root.GetProperty("enemy"),12));
+        Test("PNG atlas: original mossling 12 frames",()=>InspectAtlas("enemy",root.GetProperty("enemy"),15));
         Test("PNG atlas: 3 independent parallax backgrounds",()=>InspectAtlas("background",root.GetProperty("background"),3));
         Test("PNG atlas: 3 distinct spell arcs",()=>InspectAtlas("vfx",root.GetProperty("vfx"),3));
         Test("3 visibly distinct attack poses and pivot/flip metadata",()=>ThreeAttacks(root.GetProperty("player")));
