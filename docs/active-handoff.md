@@ -1,3 +1,33 @@
+# Active handoff — DNF-UNITY-COMBAT-006 (2026-10-22)
+
+## Task and protected context
+- Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/7 — 智脑2 review outstanding.
+- **Only writable branch**: `work/unity-combat-006-preflight-20261022`, branched from fixed `6e45289ade3ceb5d3c4eae3f459bd6c32f42b9fb`.
+- `main` protected at `ae65b231f5b100ac46d71b8f3ddd3348ae948d5e`; no Godot modifications.
+- **Unity Cloud Build Automation stays manually triggered. No automatic triggers, no build, no APK, no workflow, no cloud configuration change performed.**
+
+## Verified execution
+- Authorized device: hk-relay-01, Ubuntu 24.04, official isolated .NET 8 SDK 8.0.426 / Runtime 8.0.32. Actual C# run (not Python or Unity Editor).
+- RED regression-only commit `2f657b42180cee1dcf3f2c229f51015ccb9bc8aa`: COMBAT004 tests **10 PASS, 1 FAIL, exit 1**. Failure: `Tick(0.12f)` was accepted, creating risk of skipped Stage1 hit.
+- Minimal C# repair `0d14a205b835bc0e4ce3cce7e87652a6771bc02a`: reject oversized dt before any mutation in `Combat004Core.Tick(dt)`. Contract is fixed 60Hz core steps, **not** interval event queue.
+- GREEN at code SHA `0d14a205b835bc0e4ce3cce7e87652a6771bc02a`: COMBAT004 **11 PASS, 0 FAIL, exit 0**, COMBAT002 **12 PASS, 0 FAIL, exit 0**, total **23 actual .NET cases**.
+- RED log sha256 `65f4e8297c3cb72b164cb9ade812a8d549ffe45965f4b53e2b6e163e5d45ef48`.
+- GREEN log sha256 `51ac182ef7689233e025ca408ee840a63675141b2b3c480bcc6e2e13ba0b832f`. Legacy log sha256 `7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17`.
+- Complete real SDK info/stdout/stderr: [COMBAT-006-dotnet8-red-green-20261022.txt](research/evidence/COMBAT-006-dotnet8-red-green-20261022.txt).
+
+## Confirmed prototype contracts / next phase
+- 0.055s requested hitstop quantizes to 4×60Hz ticks ≈66.67ms; 0.09s quantizes to 6×60Hz =100ms. **Not exact 55/90ms freezes**. Frozen actors' combat-local action / buffer timers stop. UI keeps running.
+- Facing and position freely steerable during unfrozen normal attacks; current facing at hit sampling decides hit. This is **an experimental rule**, not an official game attribute.
+- Per-target hit ID must be stable and unique; back leniency `dx >= -0.10`, forward `dx <= 3.0`, lane width `abs(delta)<=0.65` are prototype rules. Collision remains a discrete directional hit matrix, NOT Unity Collider2D.
+- Reversible, NOT APPLIED build-scene plan: [COMBAT-006-manual-mobile-preflight-20261022.md](research/COMBAT-006-manual-mobile-preflight-20261022.md). For later separately authorized manual build, use new build-only branch and put ResearchCombat004 at scene index 0. Do not auto-build.
+- **STATIC ONLY** scene YAML and critical GUIDs appear matched; only Bootstrap remains enabled in BuildSettings; `ProjectSettings/ProjectSettings.asset` is currently absent; `ResearchCombat004Scene.cs` was never compiled in the standalone console project.
+- **BLOCKED/NOT RUN** Unity 6000.3.26f1 Editor import/compile/PlayMode, `Sprite.Create` after `Texture2D.Apply(false,true)`, GUI/input/camera, Bootstrap PlayMode, real phone performance/touch, any APK.
+- Next: 智脑2 review #7 and stage later Editor / explicitly authorized *manual* cloud build. Do not close #7 or change trigger mode without permission.
+
+---
+
+## Parent COMBAT-004 handoff (historical; separate branch and verification scope)
+
 # Active handoff — COMBAT-004 visual scene candidate (2026-10-22)
 
 ## Fixed task/branch
