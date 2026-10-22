@@ -1,0 +1,159 @@
+DNF-UNITY-ANDROID-BLANK-001 — INCIDENT EVIDENCE + MINIMAL DIAGNOSTIC CANDIDATE
+Date: 2026-10-22
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/17
+Target source branch (ONLY write): work/unity-android-blank-screen-001-20261022
+Baseline / previous actual SUCCESSFUL Unity Cloud VisualFix build source:
+ea0da08446e76df7ab1131c951f431b377e6fdbc
+Protected main: ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+WARNING: No Unity Editor, Android adb, or authorized cloud build was run in this task.
+The dedicated remote Linux "hk-relay-01" Desktop Commander monthly quota was
+exhausted in the earlier task. An unrelated local container has no dotnet,
+C# compiler or network access. DO NOT manufacture .NET8/Unity/phone successes.
+
+SOURCE AND USER-EVIDENCE BOUNDARIES
+[ACTUAL USER PHONE INCIDENT, as reported in Issue #17]
+Phone 1536x705 screenshot: nearly uniform navy RGB about (15,23,42),
+only Android navigation buttons, no mage, enemies, background or IMGUI.
+That is a confirmed phone FAIL of the OLD baseline VisualFix APK.
+The background closely resembles dynamically created scene Camera
+backgroundColor = new Color(.06f,.09f,.17f), but a similar color is NOT
+sufficient proof that Awake reached the camera statement.
+
+[USER BUILD LOG, Issue #17 SUMMARY — NOT HANDSET LOGCAT]
+Build #1 DNF-VisualFix-Manual: SUCCESS
+Unity 6000.3.26f1, Android IL2CPP arm64; checkout ea0da084...
+Editor build, Gradle and APK artifact completed. APK archive was not opened
+here; cloud artifacts 13.14 MiB is reported storage size, not measured APK.
+Log reportedly contains import/packaging of 4 Sprite atlases and both scenes.
+No AndroidRuntime/Unity execution exception stack was provided or accessible.
+Original 7390-line log contains environment/account fields and is NOT
+republished; task summary is all that was available this conversation.
+
+[DIRECT GITHUB SOURCE VERIFIED AT EXACT BASELINE]
+ProjectSettings/EditorBuildSettings.asset enables #0 ResearchCombat004.unity,
+#1 Bootstrap.unity. ResearchCombat004.unity has 1 ACTIVE root with enabled
+ResearchCombat004Scene MonoBehaviour, matching .meta GUID:
+9db231ab58d2468599f4b5eb2c99fe03.
+ProjectSettings/ProjectVersion.txt is 6000.3.26f1.
+The root Awake constructs Combat004Core, layout, camera, actor renderer nodes,
+CombatSpritePresenter, four Resources PNG atlases and initial sprites in
+strict sequence. Without Awake, nothing meaningful is in scene YAML.
+Original Awake has no try/catch or first-fault on-screen visibility;
+its own OnGUI depends on successful root script runtime, so scene failure
+can be silent. An exception is a CANDIDATE explanation, NOT proven cause.
+ProjectSettings/ProjectSettings.asset is not in Git source, but SUCCESSful
+Editor packaging does NOT establish actual target Active Input Handling.
+Do not call this a confirmed PlayerSettings failure.
+
+CHECKED ARTIFACTS
+Git binary object equality between authoring PNG and Resources PNG, and
+independently inspected PNG8 header dimensions:
+Player/mage_atlas.png    640x640  git blob 6e0a523adab3db2a88a13d24f8ce57a94d6d0c58
+Enemy/mossling_atlas.png 448x512  git blob df5827140cb9e52f394146153d98a2f443af7b7f
+Background/landscape_atlas.png 640x1080 git blob 08351fb117295803d5f6e63e7e092a35533c51fe
+Vfx/arc_atlas.png 384x160 git blob a5aca3fc5a3ed4080e51b582103b6bd2bb959ec8
+The four corresponding Resource/Art blobs have identical Git SHAs.
+This proves repository bytes and IHDR dimensions, NOT runtime
+Resources.Load<Texture2D>, texture import, Sprite.Create or rendering.
+
+MINIMAL CODE CANDIDATE — DIVERSE FAULTS MUST BE DISTINGUISHABLE
+Assets/Scripts/Research/CombatStartupTrace.cs (+ distinct .meta)
+ - Zero UnityEngine dependency; carries ordered stage labels,
+   first-failure stage, exception TYPE only, READY vs FAILURE.
+ - Limits stage identifiers to source-owned printable tokens. Does not store
+   arbitrary messages, credentials, filesystem paths, or Android stack traces.
+Assets/Scripts/Research/CombatStartupDiagnostics.cs (+ distinct .meta)
+ - RuntimeInitializeOnLoadMethod(BeforeSceneLoad) installs independent
+   DontDestroyOnLoad scene object, without Resources.Load or Combat004Core.
+ - Independent OnGUI draws top-left SAFE-AREA status/error overlay even when
+   ResearchCombat004Scene component disables after a partial Awake exception.
+ - If failure: scene Camera clear becomes unmistakably DARK RED instead of
+   dark blue; if camera was never created, an emergency camera is created
+   without textures/sprites, so a GUI-unavailable failure is not navy-silent.
+ - Stores source-controlled stage codes only in:
+   Application.persistentDataPath/combat-startup-diagnostic.txt.
+   No raw Unity logs or user secrets persisted. Full exception printed to
+   adb logcat by Debug.LogException (not copied to public GitHub).
+ - 12-sec no-READY timeout reports SCENE_NOT_READY or SCENE_NOT_LOADED.
+ - Reports Stage+Type and whether log errors occurred; no fake "recovered".
+Assets/Scripts/Research/ResearchCombat004Scene.cs (same .meta GUID)
+ - Wraps original Awake only with stage flags and try/catch; on failure
+   calls CombatStartupDiagnostics.Fail("SCENE_AWAKE", exception), disables
+   broken scene component, independent overlay continues.
+ - Marks CORE_READY, LAYOUT_READY, CAMERA_READY, ACTORS_READY,
+   PRESENTER_CREATED/INITIALIZED, FIRST_SPRITES_ASSIGNED and SCENE_READY.
+ - Update/FixedUpdate/OnGUI catch exceptions and preserve FIRST failure;
+   no false PASS or resimulation; GUI.matrix restored by finally.
+ - Original fixed 60Hz clock, HitEvents, touchscreen, core and art stay intact.
+Assets/Scripts/Research/CombatSpritePresenter.cs (same .meta)
+ - Marks RESOURCES_BEGIN, RESOURCES_FOUND, ATLAS_SLICE_BEGIN, ATLAS_SLICE_OK
+   independently for Player, Enemy, Background and Vfx.
+ - Only stage diagnostics; does not change Sprite.Create or damage routes.
+tests/AndroidBlank001/AndroidBlank001.Tests.csproj and Runner.cs
+ - Added real C# .NET8-eligible deterministic startup trace fault-injection:
+   success, missing atlas, exception type, first-error wins, unsafe label
+   rejection, 4 PNG header/dimension/Resource comparisons, scene YAML/GUID,
+   independent diagnostic source and fixed60Hz/multitouch invariants.
+ - This suite has NOT been executed with dotnet yet. DO NOT mark it green.
+
+REAL STATIC CHECKS EXECUTED IN GITHUB CONNECTOR SESSION
+Tool program fetched actual committed candidate via GitHub, ran assertions,
+printed individual outcomes. 15 PASS / 0 FAIL:
+PASS STATIC new startup scripts and test project exist
+PASS STATIC scene 0 and Bootstrap scene 1
+PASS STATIC scene YAML root enabled and matching mono GUID
+PASS STATIC unique startup trace, diagnostic, scene GUID
+PASS STATIC boot hook before scene and DontDestroyOnLoad
+PASS STATIC diagnostic independent of battle classes / asset API
+PASS STATIC Awake and GUI exception handling
+PASS STATIC cold-start scene cameras and sprite ready stages
+PASS STATIC trace per Resources and each sprite atlas
+PASS STATIC diagnostic sanitized persistent file + failure tint
+PASS STATIC fixed60Hz and dual-touch preserved
+PASS STATIC Unity 6000.3.26f1 preserved
+PASS STATIC atlas frame contracts 19/15/3/3
+PASS STATIC new trace test suite includes fault injection and PNG checks
+PASS STATIC four changed C# production source files bracket balanced
+These are automated STATIC source checks, NOT a Unity 6 compiler, .NET8
+test runtime or Android GPU; brace checks only check simple delimiter balance.
+Separately read all 8 original/runtime PNG blob refs, compared pairs and
+decoded PNG headers: four pairs PASS on GitHub repository, still no Player run.
+
+ANDROID LOGCAT NEXT EVIDENCE PLAN — CAN USE EXISTING APK, NO BUILD REQUIRED
+Prefer the exact installed build #1 from prior Unity Cloud.
+Requirements before capturing: record device Android version, timestamp/
+timezone, observed cold-start delay, Unity target build #1, confirmed APK
+packageName from actual installed app or aapt manifest (do not guess it).
+Terminal with authorized ADB and USB/wireless debugging:
+  adb devices
+  adb logcat -c
+  adb shell am force-stop <verified.package.name>
+  adb shell monkey -p <verified.package.name> 1
+  # allow up to 15 seconds for failing boot / screen
+  adb logcat -d -v threadtime > android-blank-boot-full.log
+From LOCAL log privately extract Unity, AndroidRuntime, libc, DEBUG, ActivityTask
+and exception summaries; redact account tokens, paths, Android IDs and
+other sensitive data before attaching redacted excerpts to issue.
+If only a phone screenshot is available, record "NO LOGCAT" explicitly.
+Existing uninstrumented APK cannot show new startup diagnostic UI; for that
+feature a separate, user-approved manual build will be required.
+
+FUTURE NEW INSTRUMENTED APK ACCEPTANCE (REQUIRES USER APPROVAL)
+1. APK is based on a reviewed exact new branch SHA, Unity 6000.3.26f1, Android,
+   Cloud manual-only state verified and price/minutes confirmed with no fees.
+2. Cold start with Android rotation lock enabled: see visible diagnostic
+   overlay independent of battle root and stage chain.
+3. Success path: background, long-haired staff mage, BOTH unique mosslings,
+   LEFT/RIGHT/ATTACK buttons all visible and responsive; compare screenshot.
+4. Forced diagnostic tests in Editor ONLY (not production): inject missing
+   Resource, throw at camera creation and ONGUI, verify persistent FIRST fault.
+5. Failure path: red tinted screen + explicit first-fault stage/type and
+   sanitized persistent app log, not silent dark-navy blank.
+6. Verify per-target HitEvents, combos/OTG, Android double touch, FPS and
+   Unity/Android log. No success claim until video/logcat proves it.
+
+PLATFORM CONSTRAINT:
+Unity 6 documentation confirms BeforeSceneLoad occurs before scene MonoBehaviour
+Awake and persistentDataPath is accessible on Android; static API guidance,
+not proof implementation runs under this particular Android Player.
+No new APK, Cloud, GitHub Actions or old branches modified by this issue.
