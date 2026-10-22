@@ -1,0 +1,146 @@
+DNF-UNITY-COMBAT-007 — ANDROID LANDSCAPE + TOUCH UI: EXECUTION EVIDENCE
+Date: 2026-10-22
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/9
+Repo: lgf921375/dnf-unity-mobile
+Only write branch: work/unity-combat-007-landscape-ui-20261022
+Parent first Android build SHA: 0434533637bc7dacc63b8fbbd9b545019c27fb55
+Actually tested source SHA: 50ced35f04744f1e4f08ad89e3c5b59996b62427
+Protected main (independently verified): ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+
+CUSTOMER-SUPPLIED REAL PHONE BASELINE (NOT RERUN NOW):
+Unity Cloud Build Automation manually triggered build target "dnf-combat004-manual", #3,
+Unity 6000.3.26f1, branch build/manual-android-combat004-20261022,
+checkout 0434533637bc7dacc63b8fbbd9b545019c27fb55, Finished: SUCCESS.
+Android screenshot showed COMBAT004 scene in portrait with stretched absolute IMGUI.
+No new APK/cloud build authorized or executed in this task.
+
+SOURCE CHANGES (only this new branch):
+1. Assets/Editor/Combat007AndroidLandscapePrebuild.cs (+ .meta):
+   Editor-only IPreprocessBuildWithReport callback, Android ONLY:
+   PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft.
+   Unity 6000.3 docs https://docs.unity.com/en-us/engine/6000.3/script-reference/unityeditor/playersettings/defaultinterfaceorientation
+   This runs only if a later, separately authorized build starts; NEVER triggers a build itself.
+   Does not write fabricated full ProjectSettings/ProjectSettings.asset.
+2. Assets/Scripts/Research/ResearchCombat004Scene.cs:
+   RuntimeInitializeOnLoadMethod(BeforeSceneLoad), Android-only one-shot
+   Screen.orientation = ScreenOrientation.LandscapeLeft; Awake repeats as fallback.
+   NOT set each frame. Android OS native launch orientation is to be supplied
+   by Editor prebuild setting; first run from cold launch must be checked on phone.
+   IMGUI uniform-scale Matrix4x4.TRS with safeArea origin, recomputed after rotation.
+   Buttons are drawn by GUI.Box but hits sampled by Input.GetTouch in Update,
+   separate fingers concurrently hold Left/Right and tap Attack. Action fires only
+   on TouchPhase.Began. Mouse used only when touchCount=0; controls no longer
+   depend on GUI.Button/RepeatButton event sequences. Reset is top-right separate.
+3. Assets/Scripts/Research/Combat007Layout.cs (+ .meta):
+   Pure C# safe-area pixel to virtual-1280x720 uniform-scaling layout,
+   safe-area origin conversion from bottom-left (Unity Screen/Touch) to
+   top-left (IMGUI), virtual buttons anchored to bottom left/right or top right.
+   Portrait fallback keeps aspect and shows request-to-rotate hint.
+4. tests/Combat007/Combat007.Tests.csproj, Runner.cs:
+   Real .NET 8 unit tests for four layouts, touch coordinate round-trips
+   for four controls, nonoverlap, safeArea rectangle clamps/transient fallback,
+   and Android-only orientation request decision.
+5. No changes to COMBAT004Core, ThreeHitReferenceClock, source gameplay timings,
+   Unity Cloud trigger mode, scene BuildSettings or Bootstrap.
+
+REAL C# EXECUTION — NO PYTHON SUBSTITUTE
+Device: authorized hk-relay-01, Ubuntu 24.04 x64.
+Private temporary checkout: /tmp/dnf-combat007.ThAV5s/repo.
+SDK obtained via official dotnet-install.sh to private temp dir.
+.NET SDK Version: 8.0.426; SDK commit a021cd4eac
+MSBuild: 17.11.69+4d6a29faa
+Runtime OS: ubuntu 24.04 linux-x64
+.NET host: 8.0.32 b9a49e4a6d
+All commands run in branch checkout at SHA 50ced35f04744f1e4f08ad89e3c5b59996b62427.
+Command 1:
+  dotnet run --project tests/Combat007/Combat007.Tests.csproj --configuration Release
+TEST_007_EXIT=0
+FULL STDOUT/STDERR:
+MATRIX 1280x720 virtual=1280.00x720.00 scale=1.0000 safeTop=0 controls=4
+PASS COMBAT007 1280x720 16:9 full safe touch matrix
+MATRIX 2400x1080 virtual=1440.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 2400x1080 ultrawide with left/right notch safe matrix
+MATRIX 1920x1080 virtual=1280.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 1920x1080 16:9 full safe matrix
+MATRIX 1080x2400 virtual=1280.00x2654.81 scale=0.8438 safeTop=80 controls=4
+PASS COMBAT007 1080x2400 portrait orientation-transition safe matrix
+PASS COMBAT007 safeArea clamp/transient fallback and invalid resolution
+PASS COMBAT007 Android-only orientation policy and portrait fallback
+COMBAT007: 6 pass, 0 fail
+LOG SHA-256: 38c3eef1fa74a7f9db12707fdbfdddc7f7d3142506efc556db7770505b187341
+
+Command 2:
+  dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+TEST_004_EXIT=0
+FULL STDOUT/STDERR:
+PASS COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 11 pass, 0 fail
+LOG SHA-256: 51ac182ef7689233e025ca408ee840a63675141b2b3c480bcc6e2e13ba0b832f
+
+Command 3:
+  dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+TEST_002_EXIT=0
+FULL STDOUT/STDERR:
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+LOG SHA-256: 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+
+TOTAL: 29 PASS / 0 FAIL (6 NEW + 23 EXISTING), all three process exit codes 0.
+The test checkout contained zero changes to tracked source files; generated
+test bin/ outputs were untracked. No build automation or APK was triggered.
+
+LIMITATIONS / ACCEPTANCE LEVEL:
+[SOURCE VERIFIED] Unity runtime calls and Editor Android build hook implemented
+  on the research branch, source and meta only.
+[REAL .NET 8 EXECUTED PASS] uniform-scale/safe-area/pointer math and Android-only
+  orientation decision tested. Previous battle C# tests continue passing.
+[UNITY EDITOR NOT RUN] ResearchCombat004Scene.cs, Screen.orientation and Editor
+  prebuild callback are NOT part of these .NET csproj builds.
+[ANDROID NOT RUN] No new APK; cannot verify native Android manifest launch rotation,
+  locked system-autorotation behavior, finger hit UI coordinate transformation,
+  two-finger attacks, notch safeArea reports or runtime scene rendering on phone.
+[KNOWN STAGING GAP] No ProjectSettings/ProjectSettings.asset in source checkout.
+  Editor hook sets one documented orientation property when Android Player build
+  is begun later. Editor compilation/PlayerSettings generation and Cloud build
+  behavior must be confirmed from actual future authorized build logs.
+[INPUT GAP] Unity Active Input Handling must permit legacy Input.GetTouch and
+  Input.GetMouseButton. Currently no Editor/phone evidence on target scene.
+[DESIGN] portrait fallback preserves uniform scale without stretching; the
+  game cannot be comfortably played portrait. Runtime requests landscape.
+
+NEXT AUTHORIZED STEP (NOT EXECUTED):
+智脑2 independently reviews source and tests, then requests user permission
+for ONE manually triggered Unity Cloud build on a specifically reviewed branch
+and commit, with confirmed Cloud target "dnf-combat004-manual", Editor 6000.3.26f1,
+Android build, manual-only trigger, billing/remaining minutes and signing.
+Do not use main or the old build-only SHA accidentally. Never turn on auto build.
+Record first cold start orientation with Android system rotate LOCKED, actual
+safeArea/notches, touch two-finger movement+attacks, normal reset, Bootstrap
+scene regression, Editor build log, manifest and APK checksum.
+
+ROLLBACK:
+Switch to unchanged prior successful build-only branch at
+0434533637bc7dacc63b8fbbd9b545019c27fb55 without merging.
+All COMBAT-007 changes are only in work/unity-combat-007-landscape-ui-20261022.
+No proprietary artwork/code included.
