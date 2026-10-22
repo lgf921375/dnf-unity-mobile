@@ -138,11 +138,19 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null && Camera.allCamerasCount > 0)
             cam = Camera.allCameras[0];
-        if (cam != null)
+        if (cam == null)
         {
-            cam.backgroundColor = new Color(0.33f, 0.065f, 0.075f, 1f);
-            cam.clearFlags = CameraClearFlags.SolidColor;
+            // No scene camera at all: make startup FAILURE visually distinct
+            // without loading any texture, font, sprite or combat object.
+            GameObject emergency = new GameObject("ANDROID-BLANK-001 Failure Camera");
+            emergency.transform.SetParent(transform, false);
+            emergency.transform.position = new Vector3(0f, 0f, -20f);
+            cam = emergency.AddComponent<Camera>();
+            cam.cullingMask = 0;
+            cam.depth = -100f;
         }
+        cam.backgroundColor = new Color(0.33f, 0.065f, 0.075f, 1f);
+        cam.clearFlags = CameraClearFlags.SolidColor;
     }
 
     private void Update()
@@ -173,7 +181,7 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
             if (width < 120f) return;
             bool failed = _trace.Failed;
             bool showDetails = failed || !_trace.Ready || !_sceneGuiPainted;
-            float height = showDetails ? 180f : 43f;
+            float height = showDetails ? 180f : 76f;
             Color old = GUI.color;
             GUI.color = failed ? new Color(1f, .55f, .57f, 1f)
                 : (_trace.Ready ? new Color(.65f, 1f, .78f, 1f)
