@@ -1,0 +1,132 @@
+DNF-UNITY-ART-SLICE-001 — ACTUAL PNG ASSETS + REAL .NET 8 PROOF
+Date: 2026-10-22
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/11
+Auditor design: https://github.com/lgf921375/dnf-unity-mobile/issues/10
+Writable branch ONLY: work/unity-art-slice-001-20261022
+Parent COMBAT-007 commit: fbeb2df3b150c6358009ded5a16c41d37b911d7f
+Base ART asset commit: 286f4539612791a142a98ab8a56005c32baba2ac
+Final actual complete code/asset/manifest test SHA: 49651c71da1f1eb51c30b24b2e75be5baa6cbc40
+Protected main: ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+
+ASSETS THAT ACTUALLY EXIST IN GIT, NOT DOCUMENT-ONLY
+- Assets/Art/OriginalCombatSlice/Player/mage_atlas.png
+   PNG8 640x640; 19 slots 128x160, PPU80, ax48 ay146, 19 distinct visual frames.
+   SHA256 aa67028dcf720c7fb440da32943cc60f5abc04d0494fb908429f276ff0bb6d21
+- Assets/Art/OriginalCombatSlice/Enemy/mossling_atlas.png
+   PNG8 448x384; 12 slots 112x128, PPU80, ax55 ay118, 10 distinct visual poses.
+   SHA256 01c6dce6b4b950d769c8cee4d762a9af50ac65976331fb6528183adcf1408033
+- Assets/Art/OriginalCombatSlice/Background/landscape_atlas.png
+   PNG8 640x1080; three 640x360 layers sky/ruins/floor, PPU40.
+   SHA256 89239a61a13b903af535f0bf3bb7a181a908610e265c4c876139d4d085583265
+- Assets/Art/OriginalCombatSlice/Vfx/arc_atlas.png
+   PNG8 384x160; three 128x160 spell arcs, PPU80.
+   SHA256 a381f132395426dfd4125ab820e41959ad2112ee26b70f3d20e9e9510b7dd47c
+- docs/research/evidence/original-art-contact-sheet.png
+   PNG8 960x550; preview composed from actual atlas frame artwork, not Unity screenshot.
+   SHA256 8568eae2190595e02d8dc9df2fd063f03c89026c6db16e800ae31f553c04f089
+
+All four production atlas PNGs have exact-byte matching Resources copies in
+Assets/Resources/OriginalCombatSlice/{Player,Enemy,Background,Vfx}/
+and unique Unity .meta GUIDs for all source and runtime PNGs.
+Assets/Art/OriginalCombatSlice/frame-map.json registers cell dimensions,
+key order, PPU and origin anchors, plus .meta.
+docs/research/visual-assets-manifest.md records provenance, counts, SHA256,
+temporary states, and licensing boundaries.
+
+ORIGINALITY/RIGHTS:
+All character/monster/background/VFX image pixels were generated for this task
+by OpenAI's assistant using custom authored drawing primitives, gradient bands,
+ornate silhouettes and UV slice frames; no downloaded DNF, Nexon, Dawnbreak or
+third-party character assets were included. The mage has hair/face/robe/cape/
+ornament/boots/staff silhouette; the mossling has ears/horns/eyes/shield/claws.
+Not a claim of DNF-grade visual equivalence; merchant/legal review is separate.
+
+VISUAL SOURCE (NOT BATTLE CORE):
+Assets/Scripts/Research/CombatSpritePresenter.cs (+.meta)
+- Runtime Resources.Load<Texture2D> and Sprite.Create each atlas cell.
+- Stage1 normal attack a1_1/a1_2/a1_3 = forward staff strike;
+  Stage2 a2_1/a2_2/a2_3 = sweeping arc;
+  Stage3 a3_1/a3_2 = rising staff uppercut.
+- Uses already-existing ThreeHitReferenceClock.Stage / FrameKey.
+- Reads enemy HP/Freeze/Stun/Height/Hits, never adjudicates damage or modifies
+  combat core. Enemy height body is separated from independent ground shadow.
+- Renders three independently ordered backdrop layers and attack VFX trail.
+- Reapplies ReferenceSpriteAlignment every facing/frame change.
+Assets/Scripts/Research/ResearchCombat004Scene.cs (only visual wiring/HUD)
+- Replaces old MakePanel/CreateFrame call sites with presenter.
+- Debug HUD off by default, F1 or small DEBUG button toggles.
+- COMBAT007 Screen.safeArea uniform scale, Android landscape fallback and
+  left/right + multi-touch attack/reset reducer RETAINED.
+- Original Bootstrap and scene BuildSettings unchanged.
+
+ACTUAL TEST ENVIRONMENT
+Owner-authorized hk-relay-01 device; Ubuntu 24.04 Linux x64; privately installed
+official .NET SDK 8.0.426 / Runtime 8.0.32 / MSBuild 17.11.69+4d6a29faa.
+Temporary checkout: /tmp/dnf-art-slice.ETHu8H/repo.
+Git checkout at test SHA 49651c71da1f1eb51c30b24b2e75be5baa6cbc40.
+No changes to tracked files after running tests (TRACKED_DIRTY=0).
+No Python-model test, Unity Editor, Unity Cloud, GitHub Actions, Android/APK, or Godot.
+
+COMMANDS RUN FOR REAL:
+dotnet run --project tests/ArtSlice001/ArtSlice001.Tests.csproj --configuration Release
+dotnet run --project tests/Combat007/Combat007.Tests.csproj --configuration Release
+dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+
+REAL ASSET TEST COMPLETE CONSOLE OUTPUT
+ASSET player 640x640 tiles=19 distinct=19 real_pixel_bytes=410240
+PASS ART PNG atlas: original staff mage 19 frames
+ASSET enemy 448x384 tiles=12 distinct=10 real_pixel_bytes=172416
+PASS ART PNG atlas: original mossling 12 frames
+ASSET background 640x1080 tiles=3 distinct=3 real_pixel_bytes=692280
+PASS ART PNG atlas: 3 independent parallax backgrounds
+ASSET vfx 384x160 tiles=3 distinct=3 real_pixel_bytes=61600
+PASS ART PNG atlas: 3 distinct spell arcs
+FOOT frame=128x160 anchor=48,146 PPU=80 centerOffset=0.2000,0.8250
+PASS ART 3 visibly distinct attack poses and pivot/flip metadata
+PASS ART Unity PNG import metas unique GUID and Unity 6000.3.26f1
+PASS ART Unity resource copies/metas, scene import links and untouched core
+ART-SLICE-001 7 pass, 0 fail
+EXIT=0, final ArtSlice001.log SHA256:
+9996ef8bdb99aff7b6ffe40e911d64a9802429afbcc649785f35b16b5c326572
+
+OTHER REAL REGRESSIONS:
+Combat007 7 pass / 0 fail, exit 0
+  Log sha256 a7c36a08909f822294b7390003e7f75d9fb10536dc715d617e27762b7b5e3b61
+Combat004/006 11 pass / 0 fail, exit 0
+  Log sha256 51ac182ef7689233e025ca408ee840a63675141b2b3c480bcc6e2e13ba0b832f
+Combat002/005 12 pass / 0 fail, exit 0
+  Log sha256 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+ALL TEST PROGRAMS EXITED 0; TOTAL 7 NEW + 30 PRIOR = 37 PASS / 0 FAIL.
+
+REAL PNG FILE HEADER AUDIT:
+Player 640x640 PNG indexed 8-bit colormap, non-interlaced.
+Enemy 448x384 PNG indexed 8-bit colormap, non-interlaced.
+Background 640x1080 PNG indexed 8-bit colormap, non-interlaced.
+VFX 384x160 PNG indexed 8-bit colormap, non-interlaced.
+.NET 8 decodes actual zlib IDAT and checks every frame's nontransparent
+pixel coverage, unique pose hashes, and source/runtime hash match.
+
+KNOWN UNVERIFIED / DEFECT BOUNDARIES
+1. Unity 6000.3.26f1 Editor import/compilation, Sprite.Create atlas slicing and
+   graphics on GPU NOT RUN. Standalone .NET runner does NOT compile Unity
+   ResearchCombat004Scene.cs or CombatSpritePresenter.cs.
+2. No Android APK/phone install, orientation, two-finger, GPU FPS, foot-pivot
+   screenshot or sound evidence from this visual branch.
+3. Sprite sheet preview = actual art PNG frame comparison, not a Unity scene
+   screenshot. Contact-sheet lower rows crowded; inspect direct PNG atlases for
+   all discrete cells.
+4. Hit-sparks, per-target VFX events, genuine OTG/down/getup mechanics and
+   synced audio are NOT implemented in this isolated visual slice and are
+   explicitly reserved for sibling work/unity-hit-reaction-001-20261022.
+   Visual presenter does NOT synthesize fake damage or HitEvent.
+5. Sprite art is original proof-of-concept pixel style, not a commercial DNF
+   quality/animation equivalent. Need polish and independent Unity/phone review.
+6. Enemy12 frames include 2 visually repeated down/KO cells; 10 unique
+   poses, accepted as prototype and documented in asset manifest.
+
+SECURITY/BRANCH:
+Written only work/unity-art-slice-001-20261022, base COMBAT007 fbeb2df3...
+No modifications to main, Godot, COMBAT007 or sibling hit-reaction branch.
+No auto builds, cloud builds, Android APK or unlicensed art.
+Do not merge or close Issue before 智脑2 independent review.
