@@ -150,8 +150,130 @@ public static class Combat004Runner
         }
     }
 
+
+    // COMBAT-006 RED gate: this prototype accepts only 60 Hz (or smaller)
+    // ticks; a larger dt would silently discard first-stage hit events.
+    private static void RejectOversizeTicksWithoutMutation()
+    {
+        foreach (float delta in new[] { .12f, .20f })
+        {
+            var c = new Combat004Core();
+            c.PressAttack(); c.PressAttack();
+            float before = c.Clock.Elapsed;
+            bool rejected = false;
+            try { c.Tick(delta); } catch (ArgumentOutOfRangeException) { rejected = true; }
+            Require(rejected, "oversized Tick(" + delta + ") was not rejected");
+            Close(c.Clock.Elapsed, before, "failed tick cannot advance state");
+            Require(c.TotalContacts == 0 && c.Clock.Stage == 1,
+                "oversized step caused ghost collision or transition");
+        }
+        // Supported discrete path should still hit stage1 prior to chain.
+        var normal = new Combat004Core();
+        normal.PressAttack(); normal.PressAttack();
+        for (int i = 0; i < 12; ++i)
+            normal.Tick(Combat004Core.FixedStep);
+        Require(normal.TotalContacts == 2, "12 legal ticks must resolve first stage");
+        Require(normal.Clock.Stage == 2, "12 legal ticks must chain at .12");
+    }
+
+    private static void FreezeQuantizationContract()
+    {
+        // Design decision: requested .055 s freezes four full 60Hz ticks;
+        // requested .09 s freezes six full 60Hz ticks, with NO partial-tick carry.
+        var c = new Combat004Core();
+        c.PressAttack();
+        Until(c, () => c.TotalContacts == 2, 20);
+        Close(c.AttackerFreeze, .055f, "first freeze requested");
+        float actionTime = c.Clock.Elapsed;
+        c.PressAttack();
+        float queued = c.Clock.QueuedFor;
+        for (int i = 1; i <= 4; ++i)
+        {
+            c.Tick(Combat004Core.FixedStep);
+            Close(c.Clock.Elapsed, actionTime, "frozen attacker tick " + i);
+            Close(c.Clock.QueuedFor, queued, "input buffer frozen tick " + i);
+            if (i < 4) Require(c.AttackerFreeze > 0f, "freeze ended too early");
+        }
+        Require(c.AttackerFreeze == 0f, "four ticks must consume .055 seconds");
+        c.Tick(Combat004Core.FixedStep);
+        Require(c.Clock.Elapsed > actionTime, "action must resume next tick");
+        Until(c, () => c.Clock.Stage == 2, 40);
+        c.PressAttack();
+        Until(c, () => c.Clock.Stage == 3, 60);
+        Until(c, () => c.TotalContacts == 6, 100);
+        Close(c.AttackerFreeze, .09f, "final freeze requested");
+        actionTime = c.Clock.Elapsed;
+        for (int i = 1; i <= 6; ++i)
+        {
+            c.Tick(Combat004Core.FixedStep);
+            Close(c.Clock.Elapsed, actionTime, "final stage freeze tick " + i);
+            if (i < 6) Require(c.AttackerFreeze > 0f, "final freeze ended early");
+        }
+        Require(c.AttackerFreeze == 0f, "six ticks must consume .09 seconds");
+    }
+
+    private static void ImmediateFacingContract()
+    {
+        // Experimental rule: attack facing remains freely steerable until hit
+        // sampling (not official DNF behavior); movement allowed outside hitstop.
+        var c = new Combat004Core();
+        c.PressAttack();
+        c.Move(-1f, Combat004Core.FixedStep);
+        Require(!c.FacingRight, "direction did not flip inside windup");
+        c.Tick(Combat004Core.FixedStep);
+        c.Tick(Combat004Core.FixedStep);
+        c.Tick(Combat004Core.FixedStep);
+        Require(c.TotalContacts == 0, "backwards windup should not hit targets");
+        c.Move(+1f, Combat004Core.FixedStep);
+        Require(c.FacingRight, "facing should follow latest input");
+        Until(c, () => c.TotalContacts == 2, 10);
+        Require(c.Enemies[0].Hits == 1 && c.Enemies[1].Hits == 1,
+            "current facing should select forward targets");
+    }
+
+    private static void TargetOrderAndBounds()
+    {
+        // Unique IDs are mandatory for per-target dedup; swapping array order
+        // must not change the number of successful contacts.
+        var swapped = new Combat004Core();
+        Combat004Enemy hold = swapped.Enemies[0];
+        swapped.Enemies[0] = swapped.Enemies[1];
+        swapped.Enemies[1] = hold;
+        swapped.PressAttack();
+        Until(swapped, () => swapped.TotalContacts == 2, 20);
+        Require(swapped.Enemies[0].Hits == 1 && swapped.Enemies[1].Hits == 1,
+            "target order changed unique-ID hit registration");
+        foreach (float dx in new[] { -.11f, -.10f, -.05f, 0f, 3f, 3.01f })
+        {
+            var c = new Combat004Core();
+            c.Enemies[0].X = c.PlayerX + dx;
+            c.Enemies[1].Hp = 0;
+            c.PressAttack();
+            for (int i = 0; i < 6; ++i) c.Tick(Combat004Core.FixedStep);
+            bool expected = dx >= -.10f && dx <= Combat004Core.Range;
+            Require((c.Enemies[0].Hits == 1) == expected,
+                "rear tolerance/range contract violated at dx=" + dx);
+        }
+        foreach (float lane in new[] { -.66f, -.65f, 0f, +.65f, +.66f })
+        {
+            var c = new Combat004Core();
+            c.Enemies[0].X = c.PlayerX + 1f;
+            c.Enemies[0] = new Combat004Enemy(101, c.PlayerX + 1f, lane);
+            c.Enemies[1].Hp = 0;
+            c.PressAttack();
+            for (int i=0; i<6; ++i) c.Tick(Combat004Core.FixedStep);
+            bool expected = Math.Abs(lane) <= Combat004Core.LaneTolerance;
+            Require((c.Enemies[0].Hits == 1) == expected,
+                "lane threshold violated at lane=" + lane);
+        }
+    }
+
     public static int Main()
     {
+        Check("COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path", RejectOversizeTicksWithoutMutation);
+        Check("COMBAT006 55/90ms whole-tick hitstop quantization", FreezeQuantizationContract);
+        Check("COMBAT006 freely steered attack-facing contract", ImmediateFacingContract);
+        Check("COMBAT006 target order, rear tolerance, range/lane thresholds", TargetOrderAndBounds);
         Check("one stage hits two independent target IDs once", AttackHitsTwoTargets);
         Check("attacker and BOTH victim clocks freeze and resume", BothHitstopFreezeAndResume);
         Check("three attack stages damage both targets without fourth", ThreeStageMultiTargetCombo);
