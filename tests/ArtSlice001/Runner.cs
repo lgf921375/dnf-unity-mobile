@@ -185,7 +185,7 @@ public static class ArtSliceRunner
         using var doc=JsonDocument.Parse(File.ReadAllText(map));
         var root=doc.RootElement;
         Test("PNG atlas: original staff mage 19 frames",()=>InspectAtlas("player",root.GetProperty("player"),19));
-        Test("PNG atlas: original mossling 12 frames",()=>InspectAtlas("enemy",root.GetProperty("enemy"),15));
+        Test("PNG atlas: 15 distinct original mossling poses",()=>InspectAtlas("enemy",root.GetProperty("enemy"),15));
         Test("PNG atlas: 3 independent parallax backgrounds",()=>InspectAtlas("background",root.GetProperty("background"),3));
         Test("PNG atlas: 3 distinct spell arcs",()=>InspectAtlas("vfx",root.GetProperty("vfx"),3));
         Test("3 visibly distinct attack poses and pivot/flip metadata",()=>ThreeAttacks(root.GetProperty("player")));
