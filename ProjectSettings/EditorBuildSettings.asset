@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/ResearchCombat004.unity
+    guid: ce4286d4cab543c0b7c0ef56bbbd67e5
+  - enabled: 1
     path: Assets/Scenes/Bootstrap.unity
     guid: 4a4f795e2fcb4b2d8d1a6e5cf85d6a40
   m_configObjects: {}
