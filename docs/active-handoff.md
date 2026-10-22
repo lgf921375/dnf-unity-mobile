@@ -1,3 +1,39 @@
+# Active handoff — DNF-UNITY-ANDROID-BLANK-001 (2026-10-22)
+
+## Task and confirmed phone failure
+- P0 Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/17
+- Only authorized writable branch: `work/unity-android-blank-screen-001-20261022`
+- Parent fixed VisualFix Android build SHA: `ea0da08446e76df7ab1131c951f431b377e6fdbc`.
+- User phone actually installed the prior SUCCESSFUL Unity Cloud build #1 APK (Unity 6000.3.26f1 arm64 IL2CPP) and saw only 1536×705 deep navy background: no actor, monster, stage or GUI. **P0 real phone FAIL**.
+- Original 7390-line build report was summarized in GitHub Issue #17; editor/Gradle SUCCESS does not include Android execution traces. **NO LOGCAT AVAILABLE; root cause UNKNOWN**.
+- Protected main `ae65b231f5b100ac46d71b8f3ddd3348ae948d5e`, #11/#12/#13/#15, Godot and all build-only checkpoints. NO merge; Cloud manual triggering unchanged; NO new APK/GitHub Actions/Unity Cloud build in this task.
+
+## Source cause-analysis: evidence vs hypothesis
+- GitHub file review confirms BuildSettings index0 ResearchCombat004 and index1 Bootstrap; scene has one active root, scene MonoBehaviour GUID `9db231ab58d2468599f4b5eb2c99fe03` matching `.meta`.
+- Battle scene `Awake()` originally constructs Core, Layout, Camera, Sprite roots, then four `Resources.Load<Texture2D>`/atlas `Sprite.Create` batches, and assigns first sprites. If this throws, all renderables may not be complete and original GUI may also be unavailable. This is a **P0 plausible failure mode; not an established Android root cause**.
+- All four original and Resources PNG bytes match by their Git object IDs. Header dimensions verified: mage 640×640, mossling 448×512, background 640×1080, VFX 384×160. This does **NOT** prove runtime load or Pixel shader works.
+
+## New candidate code (ONLY this isolated branch)
+1. `Assets/Scripts/Research/CombatStartupTrace.cs` (+ unique Unity `.meta`): Unity-free ordered stage + first failure type carrier, no arbitrary log text or secrets.
+2. `Assets/Scripts/Research/CombatStartupDiagnostics.cs` (+ unique Unity `.meta`): `BeforeSceneLoad` independent persistent MonoBehaviour that needs no sprite/core/Resources. Always attempts top safe-area GUI status; on failure retains first source-stage and Exception type, turns background dark red, creates fallback failure camera if scene camera was never built. Its own GUI catch logs once and marks failure, never silently swallows a GUI exception. Captures engine error categories, saves sanitized stage-only journal at `Application.persistentDataPath/combat-startup-diagnostic.txt`; detailed stack remains ONLY in adb logcat. Timeout after 12sec without scene READY. None of this has actually run on Android yet.
+3. `Assets/Scripts/Research/ResearchCombat004Scene.cs`: wraps Awake, Update, FixedUpdate, OnGUI in first-failure capture; logs stages CORE/LAYOUT/CAMERA/ACTORS/PRESENTER/FIRST_SPRITES/READY and first scene GUI Repaint. Partial Awake error disables the broken scene script while independent diagnostic continues. IMGUI matrix reset with finally; no modifications to original combat simulation or visuals.
+4. `Assets/Scripts/Research/CombatSpritePresenter.cs`: per-atlas diagnostic steps for four art resources, separating Resource file load and Sprite.Create slicing. Real original sprites remain; no geometric placeholder rollback.
+5. `tests/AndroidBlank001`: **authored, NOT EXECUTED** .NET8 startup state fault injection + PNG/scene source test project; includes injected missing atlas, first failure, validation, each PNG resource pair and frame maps, scene GUID/order, independent UI stage contract, fixed60Hz/COMBAT007 invariants.
+
+## Actual verification of this branch
+- Executed 15/15 V8 GitHub-source STATIC checks (not .NET or Unity). All successful: new source & meta exist; scene0/1; root active+MonoBehaviour GUID; 3 new and root GUID unique; `BeforeSceneLoad` persistence; diagnostic no CombatCore or Resource calls; all Awake/Update/Fixed/OnGUI catch; Camera and first sprites stage; 4 atlas stages; sanitized log/tint; fixed60Hz/double-tap preserved; Unity 6000.3.26f1; frame-map 19/15/3/3; authored fault injection suite; delimiter balance. Four Art/Resources binary blob pairs and PNG IHDR sizes checked directly through GitHub.
+- .NET8, Unity Editor/PlayMode, Android logcat and new APK **NOT RUN / BLOCKED**: available Desktop Commander reached monthly cap; current local sandbox has no dotnet/compiler and cannot access GitHub over DNS. Do not reuse historic 59/59 tests as if rerun on #17.
+- Full analysis/testing evidence: `docs/research/evidence/ANDROID-BLANK-001-static-preflight-20261022.txt`.
+
+## Next gate
+- **Immediately** take USB/wireless ADB logcat from the same already installed old build #1 (no build needed): record UTC time, model/OS, verified Android package name, clear previous log, force-stop, cold launch, collect and privately redact Unity/AndroidRuntime/IL2CPP exceptions. Do NOT upload full unredacted Cloud/phone device logs to public Issue.
+- Independent reviewer should read latest #17 branch exact SHA and source, check Unity 6000.3.26f1 compatibility and no unintended changes. When an authorized SDK is available, execute `dotnet run --project tests/AndroidBlank001/AndroidBlank001.Tests.csproj -c Release` plus previous 6 regression suites; do not claim they pass beforehand.
+- Only if 智脑2 and user separately approve a specific new branch+SHA+target, free-minute estimate and MANUAL build, can the next APK be built. Acceptance should establish an actually visible first diagnostic screen, original BG/mage/enemies, four touch buttons, and meaningful red fault screen + persistent/logcat evidence when forced to fail.
+- Rollback: switch to unchanged baseline `ea0da08446e76df7ab1131c951f431b377e6fdbc`. No main/Godot/old branches modified.
+
+---
+
+## Historical prior handoff (not the current task)
 # Active handoff — DNF-UNITY-VISUAL-FIX-001 (2026-10-22)
 
 ## One and only authorized write branch
