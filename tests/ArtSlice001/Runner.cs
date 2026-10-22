@@ -106,6 +106,37 @@ public static class ArtSliceRunner
         Console.WriteLine("FOOT frame="+a.FrameW+"x"+a.FrameH+" anchor="+ax+","+ay+
             " PPU="+ppu+" centerOffset="+offX.ToString("F4")+","+offY.ToString("F4"));
     }
+    private static void StableMetaAndUnityVersion()
+    {
+        string[] names={
+            "Assets/Scripts/Research/CombatSpritePresenter.cs",
+            "Assets/Art/OriginalCombatSlice/frame-map.json",
+            "Assets/Art/OriginalCombatSlice/Player/mage_atlas.png",
+            "Assets/Art/OriginalCombatSlice/Enemy/mossling_atlas.png",
+            "Assets/Art/OriginalCombatSlice/Background/landscape_atlas.png",
+            "Assets/Art/OriginalCombatSlice/Vfx/arc_atlas.png",
+            "Assets/Resources/OriginalCombatSlice/Player/mage_atlas.png",
+            "Assets/Resources/OriginalCombatSlice/Enemy/mossling_atlas.png",
+            "Assets/Resources/OriginalCombatSlice/Background/landscape_atlas.png",
+            "Assets/Resources/OriginalCombatSlice/Vfx/arc_atlas.png"
+        };
+        var ids=new HashSet<string>();
+        foreach(string name in names)
+        {
+            string full=Path.Combine(Root,name+".meta");
+            Need(File.Exists(full),"missing Unity .meta for "+name);
+            string txt=File.ReadAllText(full);
+            string g=txt.Split('\n').FirstOrDefault(x=>x.StartsWith("guid: "))?.Substring(6)?.Trim();
+            Need(g!=null&&g.Length==32,"invalid GUID for "+name);
+            Need(ids.Add(g),"duplicate GUID for "+name);
+            if(name.EndsWith(".png"))
+                Need(txt.Contains("TextureImporter:")&&txt.Contains("isReadable: 1"),
+                    "atlas importer must support Sprite.Create: "+name);
+        }
+        string ver=File.ReadAllText(Path.Combine(Root,"ProjectSettings/ProjectVersion.txt"));
+        Need(ver.Contains("6000.3.26f1"),"Unity Editor version must remain fixed");
+    }
+
     private static void SourceIntegration() {
         string scene=File.ReadAllText(Path.Combine(Root,"Assets/Scripts/Research/ResearchCombat004Scene.cs"));
         string show=File.ReadAllText(Path.Combine(Root,"Assets/Scripts/Research/CombatSpritePresenter.cs"));
@@ -150,6 +181,7 @@ public static class ArtSliceRunner
         Test("PNG atlas: 3 independent parallax backgrounds",()=>InspectAtlas("background",root.GetProperty("background"),3));
         Test("PNG atlas: 3 distinct spell arcs",()=>InspectAtlas("vfx",root.GetProperty("vfx"),3));
         Test("3 visibly distinct attack poses and pivot/flip metadata",()=>ThreeAttacks(root.GetProperty("player")));
+        Test("Unity PNG import metas unique GUID and Unity 6000.3.26f1",StableMetaAndUnityVersion);
         Test("Unity resource copies/metas, scene import links and untouched core",SourceIntegration);
         Console.WriteLine("ART-SLICE-001 "+_ok+" pass, "+_fail+" fail");
         return _fail==0?0:1;
