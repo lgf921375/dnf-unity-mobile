@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "created": "2026-10-22",
+  "license": "Self-created artwork for this project; not derived from DNF, Dawnbreak, or third-party game assets.",
+  "displayPpu": 80,
+  "player": {
+    "file": "Player/mage_atlas.png",
+    "pixelWidth": 640,
+    "pixelHeight": 640,
+    "frameWidth": 128,
+    "frameHeight": 160,
+    "columns": 5,
+    "ppu": 80,
+    "anchorX": 48,
+    "anchorYTop": 146,
+    "keys": [
+      "idle0",
+      "idle1",
+      "idle2",
+      "walk0",
+      "walk1",
+      "walk2",
+      "walk3",
+      "a1_1",
+      "a1_2",
+      "a1_3",
+      "a2_1",
+      "a2_2",
+      "a2_3",
+      "a3_1",
+      "a3_2",
+      "hit",
+      "airUp",
+      "down",
+      "getup"
+    ]
+  },
+  "enemy": {
+    "file": "Enemy/mossling_atlas.png",
+    "pixelWidth": 448,
+    "pixelHeight": 384,
+    "frameWidth": 112,
+    "frameHeight": 128,
+    "columns": 4,
+    "ppu": 80,
+    "anchorX": 55,
+    "anchorYTop": 118,
+    "keys": [
+      "idle0",
+      "idle1",
+      "idle2",
+      "walk0",
+      "walk1",
+      "hurt0",
+      "hurt1",
+      "air0",
+      "air1",
+      "down0",
+      "down1",
+      "ko0"
+    ]
+  },
+  "background": {
+    "file": "Background/landscape_atlas.png",
+    "pixelWidth": 640,
+    "pixelHeight": 1080,
+    "frameWidth": 640,
+    "frameHeight": 360,
+    "columns": 1,
+    "ppu": 40,
+    "keys": [
+      "sky",
+      "ruins",
+      "floor"
+    ]
+  },
+  "vfx": {
+    "file": "Vfx/arc_atlas.png",
+    "pixelWidth": 384,
+    "pixelHeight": 160,
+    "frameWidth": 128,
+    "frameHeight": 160,
+    "columns": 3,
+    "ppu": 80,
+    "keys": [
+      "thrust",
+      "sweep",
+      "upper"
+    ]
+  }
+}
