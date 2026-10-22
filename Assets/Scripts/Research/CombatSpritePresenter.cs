@@ -37,8 +37,7 @@ namespace DnfUnityMobile.Research
         private readonly float[] _hitFlash = new float[2];
         // One independent magic impact renderer per authoritative target ID.
         private readonly SpriteRenderer[] _targetImpact = new SpriteRenderer[2];
-        private readonly float[] _impactRemaining = new float[2];
-        private readonly float[] _impactLength = new float[2];
+        private readonly CombatImpactLifetime _impactLifetime = new CombatImpactLifetime(2);
         private readonly SpriteRenderer[] _backdrops = new SpriteRenderer[3];
         private readonly Color[] _backdropTints = new Color[3];
         private float _backdropPulse;
@@ -200,8 +199,7 @@ namespace DnfUnityMobile.Research
                 sprite.sortingOrder = 12 + Mathf.RoundToInt(-cue.ContactLane * 4f);
                 sprite.color = Color.white;
                 sprite.enabled = true;
-                _impactLength[i] = cue.DurationSeconds;
-                _impactRemaining[i] = cue.DurationSeconds;
+                _impactLifetime.Begin(i, cue.DurationSeconds);
                 // Readable but deliberately subtle whole-screen impact pulse.
                 _backdropPulse = Mathf.Max(_backdropPulse,
                     cue.IsHeavy ? .18f : .095f);
@@ -215,15 +213,21 @@ namespace DnfUnityMobile.Research
         {
             if (!_initialized) return;
             float dt = Mathf.Max(0f, Time.unscaledDeltaTime);
+            // VISUAL-FIX-001: first Update after ConsumeHitEvents is deliberately
+            // lifetime-free, so a 0.25s stall cannot erase a valid impact before
+            // any rendering opportunity. FX clock remains unscaled, never global.
+            _impactLifetime.AdvanceRenderFrame(dt);
             for (int i = 0; i < _targetImpact.Length; ++i)
             {
-                if (_impactRemaining[i] > 0f)
+                if (_impactLifetime.Visible(i))
                 {
-                    _impactRemaining[i] = Mathf.Max(0f, _impactRemaining[i] - dt);
-                    float ratio = _impactLength[i] > 0f
-                        ? _impactRemaining[i] / _impactLength[i] : 0f;
+                    float ratio = _impactLifetime.Opacity(i);
                     _targetImpact[i].color = new Color(1f, 1f, 1f, ratio);
-                    _targetImpact[i].enabled = _impactRemaining[i] > 0f;
+                    _targetImpact[i].enabled = true;
+                }
+                else if (_targetImpact[i] != null)
+                {
+                    _targetImpact[i].enabled = false;
                 }
                 _hitFlash[i] = Mathf.Max(0f, _hitFlash[i] - dt);
             }
@@ -312,12 +316,11 @@ namespace DnfUnityMobile.Research
             _walkTime=0f;_idleTime=0f;_lastWasMoving=false;
             _hitRouter.Reset();
             _backdropPulse=0f;
+            _impactLifetime.Reset();
             for (int i=0;i<2;i++)
             {
                 _enemyPoseTime[i]=0f;
                 _hitFlash[i]=0f;
-                _impactRemaining[i]=0f;
-                _impactLength[i]=0f;
                 if (_targetImpact[i]!=null) _targetImpact[i].enabled=false;
             }
             for (int i=0;i<_backdrops.Length;i++)
