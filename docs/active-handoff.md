@@ -1,3 +1,37 @@
+# Active handoff — DNF-UNITY-VISUAL-FIX-001 (2026-10-22)
+
+## One and only authorized write branch
+- GitHub task Issue #15: https://github.com/lgf921375/dnf-unity-mobile/issues/15 .
+- Technical PRE-REVIEW ONLY: #14 https://github.com/lgf921375/dnf-unity-mobile/issues/14#issuecomment-6336805185 (reviewer participated in coding, therefore NOT independent signoff).
+- Allowed work branch: `work/unity-visual-fix-001-20261022`, created from original integrated code SHA `8c9fd5552ebef72110ebe9420f0171da4c784852`.
+- Protected `main` checkpoint `ae65b231f5b100ac46d71b8f3ddd3348ae948d5e`. Also never mutate #11/#12/#13 work branches, old build-only or Godot.
+- Unity Cloud Build Automation remains manual; ZERO builds/APKs/CI jobs or trigger-setting changes permitted or made.
+
+## P1-A: actual RED, minimum fix and GREEN
+- Baseline Presenter `ConsumeHitEvents` in FixedUpdate enables per-target VFX; same render frame `Update()` immediately decremented remaining .15/.24 seconds with unscaled delta, so 0.25 sec frame stall *could* remove FX prior to first rendering. This was a SOURCE hypothesis not observed Android phone failure.
+- New pure `CombatImpactLifetime.cs` (+.meta) isolates a `float[2]` lifetime and per-target `firstRenderOpportunityPending[2]` boolean. A freshly routed HitEvent receives one frame without duration decrement. Later Update frames consume unscaled time. Reset cancels all FX. Presenter now calls this tested reducer instead of direct subtraction; does not modify HP, animation clock, hitstop, 60Hz or authoritative event router.
+- RED test-only+old-scheme SHA `06ef2d158f7a8c6ee0c96657c5d8b72ec90acfb3` / actual .NET 8 **1 PASS / 5 FAIL, exit=1** (stall, 30 FPS, same-tick two targets, multi-FixedUpdate, reset/rearm).
+- Author-verified 6/6 GREEN at `0cc7a72883f6a3bf90b8ac5fe4090e7c24f297a3`; full 59/59 green at exact source SHA `b232e02ac3aded5adf529a9f4afe671433b23ccb`.
+
+## P1-B: real artwork, not key-renaming
+- Replaced the original source `Assets/Art/OriginalCombatSlice/Enemy/mossling_atlas.png` and byte-identical runtime `Assets/Resources/OriginalCombatSlice/Enemy/mossling_atlas.png` with **448×512 PNG8, 15 state cells of 112×128, all 15 pixel hashes distinct**.
+- Preexisting first 9 cells remain pixel-identical. `down1` redrawn as curled/rolled prone, `ko0` as sprawled terminal with X eyes/broken shield; new `getup0` half-kneeling, `getup1` rising and `invul0` raised-shield protected. Source/runtime real SHA-256 `6e2c5d7972e1b22cb24746bde78cfcc090c00baa81b9f2646ba2efb92698c95c`.
+- Original PNG .meta GUIDs preserved. Updated `Assets/Art/OriginalCombatSlice/frame-map.json`, both PNG binaries, `CombatSpritePresenter` EnemyKeys/load, `CombatVisualAdapter.ChooseEnemyFrame` GETUP/INVUL, and metadata author/source SHA ledger.
+- Per enemy phase-change presenter-local `_enemyPoseTime` resets without modifying combat core; GETUP0/1 keyed at first/second half of preexisting **0.16 s** getup, INVUL0 for preexisting **0.24s** invulnerability.
+- Direct real-image comparison of six frames `docs/research/evidence/visual-fix-001-mossling-down-getup-invul-ko.png`. This is a PNG preview, **not a Unity renderer screenshot**.
+
+## Verification and documented limitation
+- Real actual compiled .NET 8 on authorized Ubuntu hk-relay-01, SDK 8.0.426. At code/media SHA `b232e02ac3aded5adf529a9f4afe671433b23ccb`: VisualFix001 **6/6**, Combat002 **12/12**, Combat004 **18/18**, Combat007 **7/7**, ArtSlice001 **7/7**, VisualIntegration001 **9/9**; **total 59/59, all six process exits 0**. Logs/checksums/real RED stack: `docs/research/evidence/VISUAL-FIX-001-red-green-dotnet8-20261022.txt`.
+- After only docs and descriptive test-label update to SHA `69c67137c73e2633c54066fd9b506ed5d1fd699f`, five repeat suites **50/50** were observed again, no failures. While trying to read the last repeated VisualIntegration output, **Desktop Commander monthly quota was exhausted**. That final repetition is NOT claimed; prior exact 9/9 at `b232e02` stands as actual independent execution.
+- No Unity 6000.3.26f1 Editor is available in authorized environments. **UNITY EDITOR / PLAYMODE / ANDROID APK NOT RUN**; math and source tests cannot guarantee real GPU VFX visibility or Android UI. No sound or full DNF equivalence claim.
+- Known limits: only target 101/102 supported, a second successful hit to same target before a rendering opportunity replaces its earlier one-renderer visual; FX guarantee is one Unity Update/render *opportunity*, not proof every event was displayed on a real panel. Per-target HitEvent is still the only valid source of actual impact; no damage replay.
+
+## Review gate / rollback
+- 智脑2 must commission a **genuinely new, non-developer independent read-only audit** of the final exact VISUAL-FIX SHA, including comparisons to #14's P1 list and source/static Unity and resource import compatibility. This author does not sign independent verification.
+- Future **one** manually triggered Android Cloud build requires a NEW user approval referencing exact reviewed branch+SHA, Android Target/Unity 6000.3.26f1, available minutes/fees and screenshot/video acceptance steps. No automatic builds.
+- To roll back, switch to original untouched integration parent `8c9fd5552ebef72110ebe9420f0171da4c784852`. No changes to main or the sibling branches.
+---
+## Historical #13 integration handoff (read for continuity, not new signoff)
 # Active handoff — DNF-UNITY-VISUAL-INTEGRATION-001 (2026-10-22)
 
 Issue #13 https://github.com/lgf921375/dnf-unity-mobile/issues/13 ; final independent review by 智脑2, status CANDIDATE.
