@@ -17,7 +17,7 @@ namespace DnfUnityMobile.Research
         };
         private static readonly string[] EnemyKeys = {
             "idle0","idle1","idle2","walk0","walk1","hurt0","hurt1",
-            "air0","air1","down0","down1","ko0"
+            "air0","air1","down0","down1","ko0","getup0","getup1","invul0"
         };
         private static readonly string[] BackgroundKeys = {"sky","ruins","floor"};
         private static readonly string[] FxKeys = {"thrust","sweep","upper"};
@@ -34,6 +34,7 @@ namespace DnfUnityMobile.Research
         private readonly SpriteRenderer[] _enemyShadows = new SpriteRenderer[2];
         private readonly CombatVisualAdapter _hitRouter = new CombatVisualAdapter();
         private readonly float[] _enemyPoseTime = new float[2];
+        private readonly CombatReactionPhase[] _previousPhase = new CombatReactionPhase[2];
         private readonly float[] _hitFlash = new float[2];
         // One independent magic impact renderer per authoritative target ID.
         private readonly SpriteRenderer[] _targetImpact = new SpriteRenderer[2];
@@ -271,6 +272,11 @@ namespace DnfUnityMobile.Research
             for(int i=0;i<2;i++)
             {
                 Combat004Enemy e=combat.Enemies[i];
+                if (e.Reaction != _previousPhase[i])
+                {
+                    _enemyPoseTime[i] = 0f;
+                    _previousPhase[i] = e.Reaction;
+                }
                 if (e.Freeze<=0f) _enemyPoseTime[i]+=deltaSeconds;
                 // Precise flash belongs to ConsumeHitEvents, NEVER e.Hits polling.
                 string enemyKey=CombatVisualAdapter.ChooseEnemyFrame(e,_enemyPoseTime[i]);
@@ -320,6 +326,7 @@ namespace DnfUnityMobile.Research
             for (int i=0;i<2;i++)
             {
                 _enemyPoseTime[i]=0f;
+                _previousPhase[i]=CombatReactionPhase.READY;
                 _hitFlash[i]=0f;
                 if (_targetImpact[i]!=null) _targetImpact[i].enabled=false;
             }
