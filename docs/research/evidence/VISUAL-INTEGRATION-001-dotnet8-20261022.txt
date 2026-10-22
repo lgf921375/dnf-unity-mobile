@@ -1,0 +1,236 @@
+DNF-UNITY-VISUAL-INTEGRATION-001 REAL .NET 8 RED/GREEN EVIDENCE
+Date 2026-10-22, hk-relay-01, Ubuntu 24.04 linux-x64, private .NET SDK 8.0.426 Runtime 8.0.32.
+Repository lgf921375/dnf-unity-mobile
+ART base d918f01a61f7f060711c9330fedaead6a6a1636e
+HIT-REACTION verified imported core 7c77aad6e7aff8ca3b6120e4b642699de2c47a5a
+RED code commit 6479a6f06f999b7c221b73986f132c9b12aa7fb5
+GREEN adapter/display commit 59e90241f82319bb3cd73cc416ea5c38001ca7d3
+GREEN ART static assertion update and final tested SHA 6259b892c703fa7d0ad4c3e214d80ec99239ad63
+
+EXECUTION COMMAND for each suite:
+  /tmp/dnf-hitreaction-002/dotnet/dotnet run --project tests/NAME/NAME.Tests.csproj -c Release
+PWD: /tmp/dnf-visual-integration-001/verify
+Fresh git fetch and git checkout of exact upstream GitHub SHA for RED and GREEN.
+RED: expected real CS2001 missing CombatVisualAdapter.cs, exit1, not passed.
+Intermediate GREEN after presenter integration: legacy ArtSlice001 6 PASS / 1 FAIL / exit 1;
+  old test expected enemy.Hp to be literally inside Presenter. New read-only mapping now lives
+  in CombatVisualAdapter. Updated same original guarantee in ArtSlice001 test to inspect
+  the correct source. No runtime combat behavior weakened by this assertion migration.
+FINAL GREEN (each process exit 0):
+Combat002 12/12 stdout SHA256 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+Combat004 18/18 stdout SHA256 874a685a7d8fa0c22aa329c6e0034cda90137c76b50f6b37002de9189a23f998
+Combat007 7/7 stdout SHA256 a7c36a08909f822294b7390003e7f75d9fb10536dc715d617e27762b7b5e3b61
+ArtSlice001 7/7 stdout SHA256 9996ef8bdb99aff7b6ffe40e911d64a9802429afbcc649785f35b16b5c326572
+VisualIntegration001 9/9 stdout SHA256 c9e5110214142d203044df4d381ab8c0575f871258d006d72fde8a7e9ca46f70
+TOTAL 53/53 PASS and all final exit codes 0.
+RED stdout SHA256 394b321a725e602247654b2880eaa85ed504a23d0b6ead397e907b7aa3bfabf7
+RED stderr SHA256 2c69cf30de7b7fa2cb645dfae7ae045201b6557fb8c909403ab6712451a0c4ea
+One of Combat004's 18 cases repeats fixed seeds 0..99, not 100 independently-counted cases.
+
+Original raw stdout/stderr below, with remote read-tool file headers and exit file contents.
+/tmp/dnf-visual-integration-001/red-commit.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/red-commit.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/red-commit.exit: text/plain (text)
+/tmp/dnf-visual-integration-001/green-commit-ArtSlice001.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/green-commit-ArtSlice001.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/green-commit-ArtSlice001.exit: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat002.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat002.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat002.exit: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat004.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat004.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat004.exit: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat007.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat007.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/final-Combat007.exit: text/plain (text)
+/tmp/dnf-visual-integration-001/final-ArtSlice001.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/final-ArtSlice001.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/final-ArtSlice001.exit: text/plain (text)
+/tmp/dnf-visual-integration-001/final-VisualIntegration001.stdout: text/plain (text)
+/tmp/dnf-visual-integration-001/final-VisualIntegration001.stderr: text/plain (text)
+/tmp/dnf-visual-integration-001/final-VisualIntegration001.exit: text/plain (text)
+
+--- /tmp/dnf-visual-integration-001/red-commit.stdout contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+CSC : error CS2001: Source file '/tmp/dnf-visual-integration-001/verify/tests/VisualIntegration001/../../Assets/Scripts/Research/CombatVisualAdapter.cs' could not be found. [/tmp/dnf-visual-integration-001/verify/tests/VisualIntegration001/VisualIntegration001.Tests.csproj]
+
+--- /tmp/dnf-visual-integration-001/red-commit.stderr contents: ---
+[Reading 2 lines from start (total: 2 lines, 0 remaining)]
+
+
+The build failed. Fix the build errors and run again.
+
+--- /tmp/dnf-visual-integration-001/red-commit.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+1
+
+--- /tmp/dnf-visual-integration-001/green-commit-ArtSlice001.stdout contents: ---
+[Reading 13 lines from start (total: 13 lines, 0 remaining)]
+
+ASSET player 640x640 tiles=19 distinct=19 real_pixel_bytes=410240
+PASS ART PNG atlas: original staff mage 19 frames
+ASSET enemy 448x384 tiles=12 distinct=10 real_pixel_bytes=172416
+PASS ART PNG atlas: original mossling 12 frames
+ASSET background 640x1080 tiles=3 distinct=3 real_pixel_bytes=692280
+PASS ART PNG atlas: 3 independent parallax backgrounds
+ASSET vfx 384x160 tiles=3 distinct=3 real_pixel_bytes=61600
+PASS ART PNG atlas: 3 distinct spell arcs
+FOOT frame=128x160 anchor=48,146 PPU=80 centerOffset=0.2000,0.8250
+PASS ART 3 visibly distinct attack poses and pivot/flip metadata
+PASS ART Unity PNG import metas unique GUID and Unity 6000.3.26f1
+FAIL ART Unity resource copies/metas, scene import links and untouched core: visual poses not sourced from combat status
+ART-SLICE-001 6 pass, 1 fail
+
+--- /tmp/dnf-visual-integration-001/green-commit-ArtSlice001.stderr contents: ---
+[Reading 0 lines from start (total: 0 lines, 0 remaining)]
+
+
+
+--- /tmp/dnf-visual-integration-001/green-commit-ArtSlice001.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+1
+
+--- /tmp/dnf-visual-integration-001/final-Combat002.stdout contents: ---
+[Reading 13 lines from start (total: 13 lines, 0 remaining)]
+
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+
+--- /tmp/dnf-visual-integration-001/final-Combat002.stderr contents: ---
+[Reading 0 lines from start (total: 0 lines, 0 remaining)]
+
+
+
+--- /tmp/dnf-visual-integration-001/final-Combat002.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+0
+
+--- /tmp/dnf-visual-integration-001/final-Combat004.stdout contents: ---
+[Reading 19 lines from start (total: 19 lines, 0 remaining)]
+
+PASS COMBAT004 HIT REACTION per-target immutable event snapshot
+PASS COMBAT004 HIT REACTION full launch/landing/getup/protection lifecycle
+PASS COMBAT004 HIT REACTION grounded OTG once and subsequent protection
+PASS COMBAT004 HIT REACTION victim state clock freezes separately
+PASS COMBAT004 HIT REACTION KO terminal and Reset clears events
+PASS COMBAT004 HIT REACTION down overlap still obeys forward range
+PASS COMBAT004 HIT REACTION deterministic fixed seeds 0..99
+PASS COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 18 pass, 0 fail
+
+--- /tmp/dnf-visual-integration-001/final-Combat004.stderr contents: ---
+[Reading 0 lines from start (total: 0 lines, 0 remaining)]
+
+
+
+--- /tmp/dnf-visual-integration-001/final-Combat004.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+0
+
+--- /tmp/dnf-visual-integration-001/final-Combat007.stdout contents: ---
+[Reading 12 lines from start (total: 12 lines, 0 remaining)]
+
+MATRIX 1280x720 virtual=1280.00x720.00 scale=1.0000 safeTop=0 controls=4
+PASS COMBAT007 1280x720 16:9 full safe touch matrix
+MATRIX 2400x1080 virtual=1440.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 2400x1080 ultrawide with left/right notch safe matrix
+MATRIX 1920x1080 virtual=1280.00x720.00 scale=1.5000 safeTop=0 controls=4
+PASS COMBAT007 1920x1080 16:9 full safe matrix
+MATRIX 1080x2400 virtual=1280.00x2654.81 scale=0.8438 safeTop=80 controls=4
+PASS COMBAT007 1080x2400 portrait orientation-transition safe matrix
+PASS COMBAT007 safeArea clamp/transient fallback and invalid resolution
+PASS COMBAT007 Android-only orientation policy and portrait fallback
+PASS COMBAT007 two-finger held move and once-only ATTACK/RESET
+COMBAT007: 7 pass, 0 fail
+
+--- /tmp/dnf-visual-integration-001/final-Combat007.stderr contents: ---
+[Reading 0 lines from start (total: 0 lines, 0 remaining)]
+
+
+
+--- /tmp/dnf-visual-integration-001/final-Combat007.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+0
+
+--- /tmp/dnf-visual-integration-001/final-ArtSlice001.stdout contents: ---
+[Reading 13 lines from start (total: 13 lines, 0 remaining)]
+
+ASSET player 640x640 tiles=19 distinct=19 real_pixel_bytes=410240
+PASS ART PNG atlas: original staff mage 19 frames
+ASSET enemy 448x384 tiles=12 distinct=10 real_pixel_bytes=172416
+PASS ART PNG atlas: original mossling 12 frames
+ASSET background 640x1080 tiles=3 distinct=3 real_pixel_bytes=692280
+PASS ART PNG atlas: 3 independent parallax backgrounds
+ASSET vfx 384x160 tiles=3 distinct=3 real_pixel_bytes=61600
+PASS ART PNG atlas: 3 distinct spell arcs
+FOOT frame=128x160 anchor=48,146 PPU=80 centerOffset=0.2000,0.8250
+PASS ART 3 visibly distinct attack poses and pivot/flip metadata
+PASS ART Unity PNG import metas unique GUID and Unity 6000.3.26f1
+PASS ART Unity resource copies/metas, scene import links and untouched core
+ART-SLICE-001 7 pass, 0 fail
+
+--- /tmp/dnf-visual-integration-001/final-ArtSlice001.stderr contents: ---
+[Reading 0 lines from start (total: 0 lines, 0 remaining)]
+
+
+
+--- /tmp/dnf-visual-integration-001/final-ArtSlice001.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+0
+
+--- /tmp/dnf-visual-integration-001/final-VisualIntegration001.stdout contents: ---
+[Reading 10 lines from start (total: 10 lines, 0 remaining)]
+
+PASS VISUAL same-tick 2 targets routed once by ID from real events
+PASS VISUAL stage 3 launches and produces heavy upper effects
+PASS VISUAL AIR DOWN GETUP INVUL KO atlas selection
+PASS VISUAL only verified stage1/2 OTG gets FX, no damage replay
+PASS VISUAL wrong target and Reset route protection
+PASS VISUAL three original mage attack keys and readonly damage
+PASS VISUAL scene consumes one-time event and retains COMBAT007
+PASS VISUAL reject duplicate target IDs and replayed/stale ticks
+PASS VISUAL actual Sprite Presenter source has independent arc-hit effects
+VISUAL-INTEGRATION-001 9 pass, 0 fail
+
+--- /tmp/dnf-visual-integration-001/final-VisualIntegration001.stderr contents: ---
+[Reading 0 lines from start (total: 0 lines, 0 remaining)]
+
+
+
+--- /tmp/dnf-visual-integration-001/final-VisualIntegration001.exit contents: ---
+[Reading 1 lines from start (total: 1 lines, 0 remaining)]
+
+0
+
+[executed on device: hk-relay-01 (a0e8f341-563b-4ad3-81ed-1d5811a97157)]
+NOT RUN: actual Unity 6000.3.26f1 Editor compile / PlayMode, Android, real screen recorder,
+actual touch and GPU FPS, APK build, Audio verification, Cloud Build or GitHub Actions.
+These are actual .NET C# console tests, not a replacement for Unity Editor.

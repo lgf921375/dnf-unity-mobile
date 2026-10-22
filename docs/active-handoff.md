@@ -1,3 +1,18 @@
+# Active handoff — DNF-UNITY-VISUAL-INTEGRATION-001 (2026-10-22)
+
+Issue #13 https://github.com/lgf921375/dnf-unity-mobile/issues/13 ; final independent review by 智脑2, status CANDIDATE.
+Only write work/unity-visual-integration-001-20261022, based on #11 d918f01a61f7f060711c9330fedaead6a6a1636e; imported select validated #12 core/test files from 7c77aad6e7aff8ca3b6120e4b642699de2c47a5a.
+RED commit 6479a6f06f999b7c221b73986f132c9b12aa7fb5 failed CS2001 exit1.
+GREEN integration code 59e90241f82319bb3cd73cc416ea5c38001ca7d3.
+Historical ART assertion migration 6259b892c703fa7d0ad4c3e214d80ec99239ad63.
+Full .NET SDK 8.0.426 real run on this tested GitHub SHA: Combat002 12/12, Combat004 18/18, Combat007 7/7, ArtSlice001 7/7, VisualIntegration001 9/9; TOTAL 53/53 exit 0. One intermediate ART assertion failed when core status logic moved from Presenter to Adapter and was corrected to assert the same property in the new owner. Logs docs/research/evidence/VISUAL-INTEGRATION-001-dotnet8-20261022.txt.
+Real Sprite links: original #11 mage/mossling/landscape/vfx PNG, phase-aware enemy poses, per-target HitEvent sparks, ground shadow, light backdrop feedback, independent unscaled VFX time. Contract docs/research/visual-integration-contract.md. No HP mutation or hit eligibility in Presenter.
+Stable new .meta GUIDs; original #11 assets, COMBAT007 safeArea/touch and scene order retained.
+UNITY EDITOR / PLAYMODE / ANDROID / APK NOT RUN. No original audio asset provided; no invented DNF sounds. Unity visual presentation NOT accepted. Await 智脑2 independent audit then future user-approved single manual build.
+main, Godot, old #11/#12 branches, cloud/Actions/Android builds and automated trigger configuration all left unchanged.
+
+---
+
 # Active handoff — DNF-UNITY-ART-SLICE-001 (2026-10-22)
 
 ## Only active execution branch
