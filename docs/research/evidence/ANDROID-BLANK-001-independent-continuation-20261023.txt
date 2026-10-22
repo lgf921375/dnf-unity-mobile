@@ -1,0 +1,71 @@
+DNF-UNITY-ANDROID-BLANK-001 | Independent continuation source audit | 2026-10-23
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/17
+Source branch (ONLY authorized writable branch): work/unity-android-blank-screen-001-20261022
+Read-only input HEAD: c3e535d984ae0d6dca79adf9f304b0ebda816479
+Old Cloud VisualFix actual built source: ea0da08446e76df7ab1131c951f431b377e6fdbc
+Source compare (GitHub): ahead=14, behind=0, exactly 10 changed file paths (all original candidate changes retained).
+GitHub Issue #17: 3 comments read including the 2026-10-23 handoff.
+Source files reviewed: CombatStartupDiagnostics.cs, CombatStartupTrace.cs, ResearchCombat004Scene.cs, CombatSpritePresenter.cs, MobileSmoke.cs, AndroidBlank001 Runner.cs/csproj, EditorBuildSettings.asset, ResearchCombat004.unity/.meta, ProjectVersion.txt, frame-map.json.
+
+ACTUAL NEW MACHINE-EXECUTED STATIC ASSERTIONS: 18 PASS / 0 FAIL
+PASS STATIC Fixed branch baseline scene ordering
+PASS STATIC Active root script GUID matches unchanged .meta
+PASS STATIC Editor version 6000.3.26f1
+PASS STATIC Diagnostics loads BeforeSceneLoad
+PASS STATIC Standalone component no combat core or asset loading invocation
+PASS STATIC Primary exception from scene Awake is retained
+PASS STATIC Failure guarded in scene Update, FixedUpdate and OnGUI
+PASS STATIC Diagnostic OnGUI has first failure fallback
+PASS STATIC Failure fallback camera requires no asset
+PASS STATIC First fault trace policy
+PASS STATIC Stage journal redacts Unity raw messages and stacks
+PASS STATIC Timeout path independent of scene sceneReady
+PASS STATIC Per-asset begin-found-slice evidence
+PASS STATIC Original first sprite branch explicitly checked
+PASS STATIC Battle loop and multitouch still present
+PASS STATIC MobileSmoke AfterSceneLoad gated to Bootstrap
+PASS STATIC AndroidBlank001 .NET8 project includes tested trace
+PASS STATIC Art frame index counts match scripted mapping
+
+IMPORTANT TEST DISTINCTIONS
+Static source assertions run in GitHub connector V8 environment; not a Unity compile, not .NET8, not an Android emulation and not a phone Logcat.
+Command attempted in this continuation local container: dotnet --info
+Result: executable not present in PATH (shutil.which('dotnet') -> None); process start PermissionError [Errno 13] dotnet. Exit code: N/A / NOT STARTED.
+Command attempted: git ls-remote https://github.com/lgf921375/dnf-unity-mobile.git refs/heads/work/unity-android-blank-screen-001-20261022
+Exit: 128, stderr: fatal: unable to access ... Could not resolve host: github.com.
+Remote Desktop Commander who_am_i: remote_calls_left_pct=0. No authorized available .NET8 runner.
+Consequently: no .NET 8 tests were executed in this continuation (0/7); do not claim green.
+Blocked .NET8 commands, to run only on next available authorized .NET8 checkout:
+dotnet run --project tests/AndroidBlank001/AndroidBlank001.Tests.csproj -c Release
+dotnet run --project tests/Combat002/Combat002.Tests.csproj -c Release
+dotnet run --project tests/Combat004/Combat004.Tests.csproj -c Release
+dotnet run --project tests/Combat007/Combat007.Tests.csproj -c Release
+dotnet run --project tests/ArtSlice001/ArtSlice001.Tests.csproj -c Release
+dotnet run --project tests/VisualIntegration001/VisualIntegration001.Tests.csproj -c Release
+dotnet run --project tests/VisualFix001/VisualFix001.Tests.csproj -c Release
+Each suite requires capturing real full stdout/stderr and numeric exit code. The historical 59/59 at older SHA is NOT a rerun.
+
+INDEPENDENT REVIEW / EVIDENCE BOUNDARIES
+Unity 6000.3 official API documentation confirms BeforeSceneLoad occurs before scene Awake and Unity 6 Camera.allCameras/allCamerasCount API exists; no runtime proof supplied.
+BeforeSceneLoad installs independent UI and App.persistentDataPath journal, stage failure remains first-wins, scene guarded failures disable incomplete battle script; assets and original core preserved.
+MobileSmoke AfterSceneLoad explicitly exits unless Bootstrap scene is active; active first scene is ResearchCombat004. Thus no source proof that smoke camera overlays the first battle scene.
+No confirmed new production defect requiring speculative source edit was found. No production code changed by this continuation.
+Remaining runtime risks: plugin/IL2CPP stripping and callback invocation, Android texture import/Resources.Load/Sprite.Create, camera and legacy input behavior, OnGUI font/style availability, graphics configuration and UnityPlayerGameActivity; require Logcat/real Player.
+Existing OLD APK phone screen FAIL confirmed via user Issue, not a new reproduction by this window.
+NO original Android cold-start logcat; actual crash location and root cause remain UNKNOWN.
+Unity Editor 6000.3.26f1 compile NOT RUN, PlayMode NOT RUN, Android new APK/phone NOT RUN.
+
+HOW TO OBTAIN DECISIVE LOGCAT WITHOUT BUILD
+Use exact previously installed VisualFix Build #1 package name confirmed in old APK static Manifest: com.lgf921375.mobilecombatlab. Verify installed package in adb before collection.
+adb devices
+adb shell pm list packages | grep com.lgf921375.mobilecombatlab
+adb logcat -c
+adb shell am force-stop com.lgf921375.mobilecombatlab
+adb shell monkey -p com.lgf921375.mobilecombatlab 1
+wait locally ~15 seconds for startup symptoms (manual observation; no automated background task)
+adb logcat -d -v threadtime > android-blank-boot-full.log
+Keep private raw log, redact package-related full paths, Android IDs, account details/secrets, publish only relevant Unity/AndroidRuntime/IL2CPP first-fault excerpts.
+
+RESULT: independent static audit PASS, genuine .NET8 regression BLOCKED, Unity Editor/Android NOT RUN, old Android P0 FAIL stays OPEN, root cause UNKNOWN.
+NEXT GATE: acquire old APK Logcat and actual .NET8 full suite; independent approval and renewed explicit user authorization required for a single further Unity Cloud build. No Cloud/Actions/APK invoked.
+SAFETY: no main, Godot, historical branch, build config, combat core, or packaged assets modified.
