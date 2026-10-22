@@ -1,0 +1,101 @@
+DNF-UNITY-COMBAT-004 — ISOLATED UNITY SCENE: REAL .NET 8 TEST EVIDENCE
+Date: 2026-10-22, UTC test start 2026-10-21T23:54:36Z
+Task: https://github.com/lgf921375/dnf-unity-mobile/issues/3
+Branch: work/unity-combat-004-scene-20261022
+Source branching checkpoint: 4c94bc157cc3822fd779e08a5d20e59f97559116
+Protected main: ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+
+EXECUTION FACTS:
+- Owner-authorized hk-relay-01 device, Ubuntu 24.04 linux-x64.
+- All work in temporary /tmp/dnf-combat004.ZTsqLN (no system-wide SDK package).
+- .NET SDK 8.0.426 / runtime 8.0.32, MSBuild 17.11.69+4d6a29faa.
+- SDK obtained via the official dotnet-install.sh --channel 8.0 --install-dir <temporary sdk directory>.
+- Fresh --depth 1 --single-branch checkout of the isolated COMBAT004 branch.
+- NO Python model tests repeated.
+- All .NET commands are actual compiled C# applications, not a Python translation.
+- COMBAT004 console tests compile real Combat004Core.cs + ThreeHitReferenceClock.cs
+  + ReferenceSpriteAlignment.cs; fake UnityEngine types exist only in Runner.cs,
+  which is outside the Assets folder. The original COMBAT002 harness also uses
+  test-only fake UnityEngine mathematics.
+- No Unity Editor executable was found by executable lookup and bounded
+  search of /opt /usr/local /home on authorized remote device. No Editor/PlayMode run.
+
+FIRST EXECUTION (6 new tests, prior to additional anchor matrix regression):
+  commit fe1f51a6eb88a585b7c5e4c868791118f60a32aa
+  Command: dotnet run --project tests/Combat002/Combat002.Tests.csproj -c Release
+  Exit 0; original 12 PASS, 0 FAIL; log SHA256
+    7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+  Command: dotnet run --project tests/Combat004/Combat004.Tests.csproj -c Release
+  Exit 0; new 6 PASS, 0 FAIL; log SHA256
+    4673aaa6cf76a9dc99f0974780fa1807fb5a6f3806ac7dc7f265a1bf5e3ccb9a
+
+FINAL REPRODUCIBLE CODE CHECKOUT BEFORE DOC-ONLY COMMITS:
+  a097d9647df0f526d1841c7e8e01d944cd570dcf
+  Command: /tmp/dnf-combat004.ZTsqLN/sdk/dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+  LEGACY_EXIT=0
+  EXACT stdout+stderr:
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+  legacy-final.log SHA256:
+  7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+
+  Command: /tmp/dnf-combat004.ZTsqLN/sdk/dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+  NEW_EXIT=0
+  EXACT stdout+stderr:
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 7 pass, 0 fail
+  research-final.log SHA256:
+  471b622950757639c0468ae72b02c0467c7f67cde23593e79e9c764b26c0ae70
+
+STATIC ISOLATION CHECKS (actual checkout):
+  grep: Assets/Scripts/MobileSmoke.cs:26:
+    if (SceneManager.GetActiveScene().name != "Bootstrap") return;
+  grep: Assets/Scenes/ResearchCombat004.unity:14:
+    m_Name: ResearchCombat004
+  Assets/Scripts/Research/ResearchCombat004Scene.cs.meta:
+    guid: 9db231ab58d2468599f4b5eb2c99fe03
+  BRANCH: work/unity-combat-004-scene-20261022
+  TRACKED_CHANGES=0
+  Both tests returned exit=0 at tested code SHA.
+  Untracked bin/ outputs in tests/Combat002 and tests/Combat004 are local build artifacts.
+
+EVIDENCE CLASSIFICATION:
+  【ACTUAL .NET 8 EXECUTED PASS】 12 existing + 7 new console cases.
+  【STATIC IMPLEMENTATION ONLY】 Generated sprite drawing, scene YAML/Unity .meta,
+    GUI, Camera, SpriteRenderer alignment, conditional MobileSmoke initialization.
+  【UNITY EDITOR / PLAYMODE NOT RUN】 Unity 6000.3.26f1 import, GUI display,
+    actual SpriteRenderer foot pivot/flipX, PlayMode character behavior and FPS.
+  【NOT RUN】 Android/mobile on device, APK, Unity Cloud, GitHub Actions, remote deployment.
+  【FUTURE WORK】 Physics colliders/swept hits, attacker/victim animation feedback
+    visual calibration, real landing, networking, true world-space 2.5D depth.
+
+PROTOTYPE CONTRACT:
+  The simulation counts hits by (attackInstanceId,targetId,hitIndex=0) within
+  an explicit directional/range/lane frame matrix. Each target is independently
+  damaged/stunned/frozen; the attacker freezes on successful hit; UI remains live.
+  Buffered attack input during attacker hitstop does not expire because the attack
+  clock is paused. These are tested logical rules, not yet a visually verified game.
+
+SAFETY:
+  - No changes to main, Godot or original DNF/Dawnbreak files.
+  - No unlicensed artwork, sound or copied third-party code.
+  - No Unity Cloud/GitHub Actions build, APK or deployment.
+  - Only the specified isolated work branch received code and test commits.
+  - COMBAT004 Issue remains open until 智脑2 independent acceptance.
