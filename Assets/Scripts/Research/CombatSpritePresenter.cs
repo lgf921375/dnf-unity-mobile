@@ -32,9 +32,16 @@ namespace DnfUnityMobile.Research
         private readonly List<Sprite> _slicedSprites = new List<Sprite>();
         private readonly List<UnityEngine.Object> _ownedGeometry = new List<UnityEngine.Object>();
         private readonly SpriteRenderer[] _enemyShadows = new SpriteRenderer[2];
-        private readonly int[] _previousHits = new int[2];
+        private readonly CombatVisualAdapter _hitRouter = new CombatVisualAdapter();
         private readonly float[] _enemyPoseTime = new float[2];
         private readonly float[] _hitFlash = new float[2];
+        // One independent magic impact renderer per authoritative target ID.
+        private readonly SpriteRenderer[] _targetImpact = new SpriteRenderer[2];
+        private readonly float[] _impactRemaining = new float[2];
+        private readonly float[] _impactLength = new float[2];
+        private readonly SpriteRenderer[] _backdrops = new SpriteRenderer[3];
+        private readonly Color[] _backdropTints = new Color[3];
+        private float _backdropPulse;
         private SpriteRenderer _playerShadow;
         private SpriteRenderer _attackTrail;
         private SpriteRenderer[] _enemyRenderers;
@@ -113,6 +120,17 @@ namespace DnfUnityMobile.Research
             _attackTrail.sortingOrder = 7;
             _attackTrail.enabled = false;
 
+            for (int i = 0; i < _targetImpact.Length; ++i)
+            {
+                int targetId = 101 + i;
+                GameObject impact = new GameObject("HIT-REACTION impact target " + targetId);
+                impact.transform.SetParent(_worldRoot, false);
+                SpriteRenderer flash = impact.AddComponent<SpriteRenderer>();
+                flash.sortingOrder = 12;
+                flash.enabled = false;
+                _targetImpact[i] = flash;
+            }
+
             _playerRenderer.sortingOrder = 5;
             _initialized = true;
         }
@@ -125,6 +143,9 @@ namespace DnfUnityMobile.Research
             go.transform.localScale = new Vector3(scale,scale,1f);
             SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = _background[key]; sr.sortingOrder = order; sr.color = tint;
+            int slot = key == "sky" ? 0 : (key == "ruins" ? 1 : 2);
+            _backdrops[slot] = sr;
+            _backdropTints[slot] = tint;
         }
 
         private Sprite MakeShadow()
@@ -153,6 +174,64 @@ namespace DnfUnityMobile.Research
             go.transform.localPosition = new Vector3(0f,-.03f,.01f);
             SpriteRenderer sr=go.AddComponent<SpriteRenderer>();
             sr.sprite=sprite;sr.sortingOrder=order;return sr;
+        }
+
+        // FixedUpdate calls exactly once AFTER core.Tick and BEFORE Present.
+        // Payloads are readonly facts; routing creates effects but NEVER changes HP.
+        public void ConsumeHitEvents(IReadOnlyList<CombatHitEvent> hitEvents,
+            Combat004Core combat)
+        {
+            if (!_initialized || hitEvents == null || combat == null) return;
+            foreach (CombatHitEvent hit in hitEvents)
+            {
+                VisualHitCue cue;
+                if (!_hitRouter.TryRoute(hit, combat.Enemies, out cue)) continue;
+                int i = cue.TargetIndex;
+                _enemyPoseTime[i] = 0f;
+                _hitFlash[i] = cue.DurationSeconds;
+                SpriteRenderer sprite = _targetImpact[i];
+                sprite.sprite = _vfx[cue.EffectKey]; // original arc_atlas.png
+                sprite.flipX = cue.PushDirection < 0;
+                sprite.transform.position = new Vector3(cue.ContactX,
+                    -1.90f + cue.ContactLane * 0.32f + cue.ContactHeight + 0.53f,
+                    0.04f);
+                float scale = cue.IsHeavy ? 0.87f : 0.62f;
+                sprite.transform.localScale = new Vector3(scale, scale, 1f);
+                sprite.sortingOrder = 12 + Mathf.RoundToInt(-cue.ContactLane * 4f);
+                sprite.color = Color.white;
+                sprite.enabled = true;
+                _impactLength[i] = cue.DurationSeconds;
+                _impactRemaining[i] = cue.DurationSeconds;
+                // Readable but deliberately subtle whole-screen impact pulse.
+                _backdropPulse = Mathf.Max(_backdropPulse,
+                    cue.IsHeavy ? .18f : .095f);
+            }
+        }
+
+        // VFX uses unscaled *render-frame* time and may continue while the
+        // attack/victim LOCAL 60 Hz combat clocks are frozen by hitstop.
+        // No second hit test, HP mutation or looped attack trigger here.
+        private void Update()
+        {
+            if (!_initialized) return;
+            float dt = Mathf.Max(0f, Time.unscaledDeltaTime);
+            for (int i = 0; i < _targetImpact.Length; ++i)
+            {
+                if (_impactRemaining[i] > 0f)
+                {
+                    _impactRemaining[i] = Mathf.Max(0f, _impactRemaining[i] - dt);
+                    float ratio = _impactLength[i] > 0f
+                        ? _impactRemaining[i] / _impactLength[i] : 0f;
+                    _targetImpact[i].color = new Color(1f, 1f, 1f, ratio);
+                    _targetImpact[i].enabled = _impactRemaining[i] > 0f;
+                }
+                _hitFlash[i] = Mathf.Max(0f, _hitFlash[i] - dt);
+            }
+            _backdropPulse = Mathf.Max(0f, _backdropPulse - dt * 1.6f);
+            for (int i = 0; i < _backdrops.Length; ++i)
+                if (_backdrops[i] != null)
+                    _backdrops[i].color = Color.Lerp(_backdropTints[i],
+                        Color.white, _backdropPulse);
         }
 
         // The old game loop owns all states. We observe it AFTER core.Tick().
@@ -189,15 +268,17 @@ namespace DnfUnityMobile.Research
             {
                 Combat004Enemy e=combat.Enemies[i];
                 if (e.Freeze<=0f) _enemyPoseTime[i]+=deltaSeconds;
-                if (e.Hits!=_previousHits[i]) { _hitFlash[i]=.16f;_previousHits[i]=e.Hits; }
-                if (_hitFlash[i]>0f) _hitFlash[i]=Math.Max(0f,_hitFlash[i]-deltaSeconds);
-                string enemyKey=ChooseEnemyFrame(e,_enemyPoseTime[i]);
+                // Precise flash belongs to ConsumeHitEvents, NEVER e.Hits polling.
+                string enemyKey=CombatVisualAdapter.ChooseEnemyFrame(e,_enemyPoseTime[i]);
                 _enemyRenderers[i].flipX=true; // enemies face attacker at left
                 ReferenceSpriteAlignment.ApplyCenteredSprite(_enemyRenderers[i],
                     _enemy[enemyKey],112,128,55f,118f,PixelsPerUnit);
                 _enemyRenderers[i].sortingOrder=4+Mathf.RoundToInt(-e.Lane*4f);
-                _enemyRenderers[i].color= _hitFlash[i]>0f ?
-                    new Color(1f,.75f,.66f,1f):Color.white;
+                // Invulnerability tint is visual-only. It cannot alter OTG eligibility.
+                _enemyRenderers[i].color = e.Reaction == CombatReactionPhase.INVUL
+                    ? new Color(.62f,.86f,1f,1f)
+                    : (_hitFlash[i] > 0f
+                        ? new Color(1f,.73f,.62f,1f) : Color.white);
                 // Height only affects body: ground shadow is decoupled from jump.
                 _enemyShadows[i].transform.localPosition=
                     new Vector3(0f,-e.Height-.02f,.02f);
@@ -219,20 +300,28 @@ namespace DnfUnityMobile.Research
             return "idle" + ((int)(_idleTime/.34f)%3);
         }
 
-        public static string ChooseEnemyFrame(Combat004Enemy enemy,float poseTime)
+        // Keep the #11 public selector for callers; the phase adapter is the
+        // single state-to-frame authority, including DOWN/GETUP/INVUL fallback.
+        public static string ChooseEnemyFrame(Combat004Enemy enemy, float poseTime)
         {
-            if(enemy.Hp<=0) return "ko0";
-            if(enemy.Height>0f || enemy.VerticalSpeed>0f)
-                return "air"+((int)(poseTime/.16f)%2);
-            if(enemy.Freeze>0f || enemy.Stun>0f)
-                return "hurt"+((int)(poseTime/.18f)%2);
-            return "idle"+((int)(poseTime/.32f)%3);
+            return CombatVisualAdapter.ChooseEnemyFrame(enemy, poseTime);
         }
 
         public void ResetVisualOnly()
         {
             _walkTime=0f;_idleTime=0f;_lastWasMoving=false;
-            for(int i=0;i<2;i++){_previousHits[i]=0;_enemyPoseTime[i]=0f;_hitFlash[i]=0f;}
+            _hitRouter.Reset();
+            _backdropPulse=0f;
+            for (int i=0;i<2;i++)
+            {
+                _enemyPoseTime[i]=0f;
+                _hitFlash[i]=0f;
+                _impactRemaining[i]=0f;
+                _impactLength[i]=0f;
+                if (_targetImpact[i]!=null) _targetImpact[i].enabled=false;
+            }
+            for (int i=0;i<_backdrops.Length;i++)
+                if (_backdrops[i]!=null) _backdrops[i].color=_backdropTints[i];
         }
 
         private void OnDestroy()

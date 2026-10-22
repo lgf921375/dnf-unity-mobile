@@ -139,6 +139,10 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     {
         _core.Move(Mathf.Clamp(_guiAxis + _keyboardAxis, -1f, 1f), Time.fixedDeltaTime);
         _core.Tick(Time.fixedDeltaTime);
+        // HIT-REACTION: this is the ONLY consumption point for this 60 Hz tick.
+        // Consume before next core.Tick or PressAttack can clear the snapshot.
+        // Presenter never applies HP damage, nor generates fake contacts.
+        _spritePresenter.ConsumeHitEvents(_core.DrainHitEvents(), _core);
         RenderCombat();
     }
 
