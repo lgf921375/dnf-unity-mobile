@@ -1,3 +1,37 @@
+# Active handoff — DNF-UNITY-COMBAT-007 (2026-10-22)
+
+## Scope / user feedback / protection
+- GitHub Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/9; awaiting 智脑2 acceptance.
+- Only writable branch `work/unity-combat-007-landscape-ui-20261022`; baseline first successful manual Android battle APK commit `0434533637bc7dacc63b8fbbd9b545019c27fb55`.
+- Original Android build #3 (user-supplied evidence) installed and started battle scene, but **opened portrait**, distorting the IMGUI buttons/HUD. This is an Android phone defect report, not repeated in this task.
+- Never touch `main` (`ae65b231f5b100ac46d71b8f3ddd3348ae948d5e`), Godot, Unity Cloud manual trigger mode, existing build-only baseline, or unauthorized assets.
+- **No new Unity Cloud, GitHub Actions, Editor/Android build, APK** performed. Future single manual build requires separate explicit user approval.
+
+## Delivered fix candidate
+- `Assets/Editor/Combat007AndroidLandscapePrebuild.cs` (+ meta): Editor-only Android prebuild callback sets documented `PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft`; never starts a build. This is needed because `ProjectSettings/ProjectSettings.asset` is absent; do NOT fabricate that entire PlayerSettings file.
+- `Assets/Scripts/Research/ResearchCombat004Scene.cs`: Android-only `Screen.orientation = LandscapeLeft` called once before scene load with Awake fallback, NOT each Update; safe-area IMGUI single uniform scale, full viewport responsive layout; touch controls moved from `GUI.Button/RepeatButton` to Unity `Input.GetTouch` polling in Update, independent fingers and no hold autorepeat.
+- `Assets/Scripts/Research/Combat007Layout.cs` (+ meta): Unity-independent safeArea pixel layout, bottom-left touch pixel to top-left IMGUI map and pointer-frame reducer supporting two simultaneous fingers.
+- `tests/Combat007`: real .NET 8 layout and gesture regression, including 1280×720, 2400×1080, 1920×1080, 1080×2400 portrait fallback; touch area bounds, safe notches and pinch-free left+attack, right+reset.
+
+## Real execution evidence
+- Authorized hk-relay-01, Ubuntu 24.04 linux-x64, .NET SDK 8.0.426 / runtime 8.0.32, private temporary checkout; tested **code SHA `1e460156cfee3513344993975d357e6a8f2ca678`**.
+- COMBAT007 **7 PASS / 0 FAIL, exit 0**, SHA256 `a7c36a08909f822294b7390003e7f75d9fb10536dc715d617e27762b7b5e3b61`.
+- Unmodified COMBAT004+006 **11 PASS / 0 FAIL**, SHA256 `51ac182ef7689233e025ca408ee840a63675141b2b3c480bcc6e2e13ba0b832f`.
+- Unmodified COMBAT002+005 **12 PASS / 0 FAIL**, SHA256 `7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17`.
+- **TOTAL 30 real .NET 8 PASS**. Test source and compilation are real; the Android/Unity-specific script is NOT compiled by this console harness. Full output, device, commands, results and limitations: [COMBAT-007-landscape-ui-dotnet8-20261022.txt](research/evidence/COMBAT-007-landscape-ui-dotnet8-20261022.txt).
+- `EditorBuildSettings.asset` unchanged from successful build: index0 ResearchCombat004; index1 Bootstrap. No battle-core or timing edit. No DNF/Dawnbreak resources.
+
+## NOT YET ACCEPTED
+- `ResearchCombat004Scene.cs`, Android `Screen.orientation` runtime call, Editor prebuild callback and GUI drawing: **Unity Editor compile/PlayMode NOT RUN**, no available Editor.
+- Real native orientation from Android cold boot with system auto-rotate OFF, Android cutout/safeArea, IMGUI view, simultaneous device touch and Bootstrap scene regression: **ANDROID NOT RUN** on newly fixed source.
+- `ProjectSettings/ProjectSettings.asset` still missing. Unity Cloud PlayerSettings and Active Input Handling need evidence from a future, separately authorized manual build.
+- After 智脑2 code review, future authorization must pin new exact branch/SHA, Editor 6000.3.26f1, Android target, manual-only build policy, available minutes/cost, and required startup/rotation/two-finger phone acceptance. DO NOT build before approval.
+- Rollback is simple: reselect unchanged prior successful build-only SHA `0434533637bc7dacc63b8fbbd9b545019c27fb55`; do not merge or rewrite it.
+
+---
+
+## Historical parent (COMBAT-006; not current acceptance status)
+
 # Active handoff — DNF-UNITY-COMBAT-006 (2026-10-22)
 
 ## Task and protected context
