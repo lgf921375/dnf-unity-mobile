@@ -10,6 +10,8 @@
     <Compile Include="Runner.cs" />
     <Compile Include="../../Assets/Scripts/Research/ThreeHitReferenceClock.cs" />
     <Compile Include="../../Assets/Scripts/Research/Combat004Core.cs" />
+    <Compile Include="../../Assets/Scripts/Research/CombatHitEvent.cs" />
+    <Compile Include="../../Assets/Scripts/Research/CombatReactionState.cs" />
     <Compile Include="../../Assets/Scripts/Research/ReferenceSpriteAlignment.cs" />
   </ItemGroup>
 </Project>
