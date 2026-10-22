@@ -1,3 +1,42 @@
+# Active handoff — DNF-UNITY-ART-SLICE-001 (2026-10-22)
+
+## Only active execution branch
+- Issue #11: https://github.com/lgf921375/dnf-unity-mobile/issues/11, awaiting 智脑2 independent acceptance.
+- Writable branch `work/unity-art-slice-001-20261022`; fixed parent COMBAT-007 `fbeb2df3b150c6358009ded5a16c41d37b911d7f`.
+- **Protected** `main` `ae65b231f5b100ac46d71b8f3ddd3348ae948d5e`, sibling `work/unity-hit-reaction-001-20261022`, successful build-only checkpoint `0434533637bc7dacc63b8fbbd9b545019c27fb55`, Godot and Unity Cloud settings.
+- No GitHub Actions/Unity Cloud/Android APK, no merge, no third-party unlicensed art or DNF/Nexon original assets.
+
+## What is actually committed (not a report-only milestone)
+- Four original, directly decodable PNG8 atlases `Assets/Art/OriginalCombatSlice/{Player,Enemy,Background,Vfx}/`: player staff mage **19 keyframes**, original shielded mossling **12 pose slots / 10 unique poses**, independently layered ruins background **3 layers**, original magic attack arcs **3 frames**. 37 atlas cells across four PNG files, plus **actual PNG contact-sheet preview**.
+- Exact-byte `Assets/Resources/OriginalCombatSlice/{...}` mirror for runtime `Resources.Load<Texture2D>`; all PNG textures have committed Unity `.meta` files with stable unique GUIDs.
+- `Assets/Art/OriginalCombatSlice/frame-map.json` (+.meta) declares atlas frame order, pixel size, PPU, foot anchors and licenses.
+- `Assets/Scripts/Research/CombatSpritePresenter.cs` (+.meta): loads each atlas and slices Sprites at runtime, independently draws parallax 2.5D ruins and shadows, selects real attack poses from `ThreeHitReferenceClock.FrameKey`, selects enemy states from `Combat004Enemy`, per-frame/flipX foot-anchor alignment, retains hitstop pose timing, temporary attack-trail VFX. **No duplicate hit/damage calculations**.
+- `Assets/Scripts/Research/ResearchCombat004Scene.cs`: visual-only integration; removes calls to old block artwork and floor primitives, creates art SpriteRenderer children, changes default HUD to minimal bar text with F1/debug toggle; retains COMBAT007 responsive `Combat007Layout` and multi-touch.
+- `tests/ArtSlice001/`: real standalone .NET 8 PNG zlib-decompression and per-asset frame/hash import/.meta/pivot/scene/static code checks.
+- Source/rights/sha256 ledger: `docs/research/visual-assets-manifest.md`. Test stdout/hash: `docs/research/evidence/ART-SLICE-001-assets-and-dotnet8-20261022.txt`. Actual frame comparison: `docs/research/evidence/original-art-contact-sheet.png` (NOT Unity screenshot).
+
+## Real executed evidence
+- Authorized hk-relay-01, Ubuntu 24.04, .NET 8 SDK 8.0.426 Runtime 8.0.32, isolated temporary Git checkout.
+- Final source-and-manifest tested SHA **`49651c71da1f1eb51c30b24b2e75be5baa6cbc40`**, later changes only evidence/docs.
+- Art PNG/dependency test **7/7**, COMBAT007 **7/7**, COMBAT004/006 **11/11**, COMBAT002/005 **12/12**; **37/37 actual .NET 8 tests pass, all exit 0**. No Python simulation substitute.
+- Actual assets decode as PNG indexed 8-bit, both runtime/resource variants same SHA, 19 mage visually distinct frames, enemy 10 unique of 12 slots; 3 independent background frames, 3 spell VFX.
+- Art test log SHA-256 `9996ef8bdb99aff7b6ffe40e911d64a9802429afbcc649785f35b16b5c326572`. Full stdout and 3 other hashes in evidence TXT.
+
+## User-facing improvements, strict limits and next request
+1. New visually recognizable original long-haired blue-robed **staff mage** instead of old square sword avatar; Stage1 forward strike, Stage2 sweeping spell, Stage3 rising uppercut have different pixel silhouettes.
+2. New shielded, horned forest **mossling** with independent hit/air/KO art instead of flat brown training blocks.
+3. Original distant skyline/tree ruins/stone floor, ground shadows and three blue spell arcs; full debug overlay off by default. Prior COMBAT007 auto-landscape/safeArea/two-finger source preserved.
+- **Unity Editor 6000.3.26f1 import/compile/PlayMode and new Android APK were not run**. Source candidate only. No GPU render screenshots, no actual mobile FPS or hit feedback certification. Android real phone results remain those of the OLD 043453... block-build.
+- Creature has 12 mapped keys but only 10 unique pixel frames; visual quality is original technical slice, **not DNF-grade production art**.
+- This branch intentionally does NOT add HitEvent APIs, apply extra HP damage, do a new OTG/getup/dedup implementation, or claim landed-hit sparks/audio. Await explicit integration contract from sibling `work/unity-hit-reaction-001-20261022` when 智脑2 authorizes an integration branch.
+- If Unity Editor import is possible, validate actual TextureImporter settings for indexed PNGs, `Sprite.Create` sub-rect Y handling, all frame origins/flipX/shadows, mobile safeArea, core freeze pose hold, and initial display; then compare with old phone screenshot.
+- No next build permitted without an independently approved manual-only Cloud job pinned to exact reviewed branch/SHA, Editor 6000.3.26f1, Android target/price limit. Never enable auto build.
+- Rollback: select untouched COMBAT007 commit `fbeb2df3...` or prior successful build-only `043453...`; do not merge to main.
+
+---
+
+## Historical prior-stage handoff (not current branch execution)
+
 # Active handoff — DNF-UNITY-COMBAT-007 (2026-10-22)
 
 ## Scope / user feedback / protection
