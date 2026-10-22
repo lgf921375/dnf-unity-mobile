@@ -147,8 +147,15 @@ public static class ArtSliceRunner
         Need(show.Contains("Resources.Load<Texture2D>") &&
             show.Contains("ReferenceSpriteAlignment.ApplyCenteredSprite"),
             "atlas load/foot alignment missing");
-        Need(show.Contains("combat.Clock.FrameKey")&&show.Contains("enemy.Hp"),
-            "visual poses not sourced from combat status");
+        // VISUAL-INTEGRATION-001: phase mapping moved to Unity-independent adapter.
+        // Keep the old source-of-truth assertion, inspect its new owner.
+        string adapter=File.ReadAllText(Path.Combine(Root,
+            "Assets/Scripts/Research/CombatVisualAdapter.cs"));
+        Need(show.Contains("combat.Clock.FrameKey")&&
+             show.Contains("CombatVisualAdapter.ChooseEnemyFrame")&&
+             adapter.Contains("enemy.Hp <= 0")&&
+             adapter.Contains("enemy.Reaction"),
+            "visual poses not sourced from authoritative combat state");
         Need(!show.Contains("e.Hp =")&&!show.Contains("TotalContacts++"),
             "visual code incorrectly adjudicates combat damage");
         Need(scene.Contains("Input.GetTouch")&&scene.Contains("Combat007Layout"),
