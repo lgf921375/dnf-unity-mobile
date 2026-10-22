@@ -77,6 +77,8 @@ namespace DnfUnityMobile.Research
                 new Combat007Rect(left, screenHeight - top, width, height));
         }
 
+        public static bool ShouldLockLandscapeOnAndroid(bool isAndroid) => isAndroid;
+
         public static bool NeedsLandscapeRotation(int screenWidth, int screenHeight)
             => screenHeight > screenWidth;
 
