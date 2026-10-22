@@ -164,6 +164,8 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         {
             // GUI coordinates are top-left-origin physical pixels.
             Rect safe = Screen.safeArea;
+            if (safe.width < 1f || safe.height < 1f)
+                safe = new Rect(0f, 0f, Screen.width, Screen.height);
             float x = Mathf.Clamp(safe.xMin + 10f, 6f, Screen.width - 30f);
             float top = Mathf.Clamp(Screen.height - safe.yMax + 8f, 5f,
                 Mathf.Max(5f, Screen.height - 30f));
