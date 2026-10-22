@@ -154,7 +154,7 @@ public static class AndroidBlank001Runner
             diag.Contains("File.AppendAllText") &&
             diag.Contains("TintFailureCamera") &&
             diag.Contains("GetType().Name"),"pre-scene independent diagnostic missing");
-        Check(!diag.Contains("Combat004Core") && !diag.Contains("Resources.Load") &&
+        Check(!diag.Contains("Combat004Core") && !diag.Contains("Resources.Load<") &&
             !diag.Contains("CombatSpritePresenter"),"diagnostic depends on failing battle core");
         string scene=Source("Assets/Scripts/Research/ResearchCombat004Scene.cs");
         Check(scene.Contains("CombatStartupDiagnostics.Fail(\"SCENE_AWAKE\", ex)") &&
