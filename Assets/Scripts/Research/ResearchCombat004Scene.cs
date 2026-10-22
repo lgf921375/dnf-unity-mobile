@@ -118,47 +118,29 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         // Read all active fingers: left/right movement is held independently
         // while a different finger taps ATTACK. Attack/Reset only on TouchPhase.Began
         // (no IMGUI Button event repeats). Unity touch positions are bottom-left.
-        bool touchLeft = false, touchRight = false;
+        Combat007PointerFrame pointers = new Combat007PointerFrame();
         int n = Input.touchCount;
         if (n > 0)
         {
             for (int i = 0; i < n; i++)
             {
                 Touch touch = Input.GetTouch(i);
-                if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
-                    continue;
-                float x, y;
-                _layout.BottomLeftScreenToVirtual(touch.position.x, touch.position.y,
-                    out x, out y);
-                if (_layout.Left.Contains(x, y)) touchLeft = true;
-                if (_layout.Right.Contains(x, y)) touchRight = true;
-                if (touch.phase == TouchPhase.Began)
-                {
-                    if (_layout.Attack.Contains(x, y)) _core.PressAttack();
-                    else if (_layout.Reset.Contains(x, y)) _core.Reset();
-                }
+                bool active = touch.phase != TouchPhase.Ended &&
+                              touch.phase != TouchPhase.Canceled;
+                _layout.AddPointer(ref pointers, touch.position.x, touch.position.y,
+                    active, touch.phase == TouchPhase.Began);
             }
         }
         else
         {
-            // Unity can synthesize mouse clicks from touch. Ignore mouse while
-            // any touches are active to avoid duplicate action dispatch.
+            // Ignore synthesized mouse while any fingers are present.
             Vector3 mouse = Input.mousePosition;
-            float x, y;
-            _layout.BottomLeftScreenToVirtual(mouse.x, mouse.y, out x, out y);
-            if (Input.GetMouseButton(0))
-            {
-                touchLeft = _layout.Left.Contains(x, y);
-                touchRight = _layout.Right.Contains(x, y);
-            }
-            if (Input.GetMouseButtonDown(0))
-            {
-                if (_layout.Attack.Contains(x, y)) _core.PressAttack();
-                else if (_layout.Reset.Contains(x, y)) _core.Reset();
-            }
+            _layout.AddPointer(ref pointers, mouse.x, mouse.y,
+                Input.GetMouseButton(0), Input.GetMouseButtonDown(0));
         }
-
-        _guiAxis = (touchRight ? 1f : 0f) - (touchLeft ? 1f : 0f);
+        if (pointers.AttackDown) _core.PressAttack();
+        else if (pointers.ResetDown) _core.Reset();
+        _guiAxis = pointers.MoveAxis;
         _displayFps = Mathf.Lerp(_displayFps, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.06f);
     }
 
