@@ -64,9 +64,10 @@ public static class VisualIntegrationRunner
         Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="down0","DOWN sprite");
         Need(CombatVisualAdapter.ChooseEnemyFrame(e,0.25f)=="down1","DOWN alternate");
         Until(c,()=>e.Reaction==CombatReactionPhase.GETUP,90);
-        Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="down1","GETUP declared fallback");
+        Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="getup0","GETUP frame 0 kneel");
+        Need(CombatVisualAdapter.ChooseEnemyFrame(e,.10f)=="getup1","GETUP frame 1 stand");
         Until(c,()=>e.Reaction==CombatReactionPhase.INVUL,70);
-        Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="idle0","INVUL safe idle fallback");
+        Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="invul0","INVUL unique raised-shield pose");
         Until(c,()=>e.Reaction==CombatReactionPhase.READY,70);
         Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="idle0","READY");
         e.Hp=0; Need(CombatVisualAdapter.ChooseEnemyFrame(e,0f)=="ko0","KO sprite");
@@ -157,7 +158,8 @@ public static class VisualIntegrationRunner
             presenter.Contains("cue.ContactX") && presenter.Contains("cue.ContactLane"),
             "real arc_atlas stage / impact contact must drive sparks");
         Need(presenter.Contains("Time.unscaledDeltaTime") &&
-            presenter.Contains("_impactRemaining[i]"),
+            presenter.Contains("_impactLifetime.AdvanceRenderFrame(dt)") &&
+            presenter.Contains("_impactLifetime.Visible(i)"),
             "VFX must advance independently from frozen simulation");
         Need(presenter.Contains("_enemyShadows[i].transform.localPosition") &&
             presenter.Contains("-e.Height"),
