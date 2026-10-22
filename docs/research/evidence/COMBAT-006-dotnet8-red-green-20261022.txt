@@ -1,0 +1,156 @@
+DNF-UNITY-COMBAT-006 — REAL .NET 8 RED / GREEN EVIDENCE
+Date: 2026-10-22 SGT; remote run 2026-10-22T00:40:22Z
+Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/7
+Audit: https://github.com/lgf921375/dnf-unity-mobile/issues/5#issuecomment-6329680993
+Repository: lgf921375/dnf-unity-mobile
+Only writable branch: work/unity-combat-006-preflight-20261022
+Base HEAD: 6e45289ade3ceb5d3c4eae3f459bd6c32f42b9fb
+Protected main: ae65b231f5b100ac46d71b8f3ddd3348ae948d5e
+
+EXECUTION ENVIRONMENT / SDK:
+Owner-authorized device hk-relay-01, Ubuntu 24.04 linux-x64.
+Private, isolated workroot /tmp/dnf-combat006.VNQq6b.
+Official dotnet-install.sh --channel 8.0 --install-dir /tmp/dnf-combat006.VNQq6b/sdk --no-path.
+No Unity Editor, GitHub Actions, Unity Cloud, APK tooling or Godot invoked.
+Actual .NET SDK 8.0.426, Runtime 8.0.32, MSBuild 17.11.69+4d6a29faa.
+Source clone from ONLY work/unity-combat-006-preflight-20261022 branch.
+Full dotnet --info:
+.NET SDK:
+ Version:           8.0.426
+ Commit:            a021cd4eac
+ Workload version:  8.0.400-manifests.1f030c1a
+ MSBuild version:   17.11.69+4d6a29faa
+
+Runtime Environment:
+ OS Name:     ubuntu
+ OS Version:  24.04
+ OS Platform: Linux
+ RID:         linux-x64
+ Base Path:   /tmp/dnf-combat006.VNQq6b/sdk/sdk/8.0.426/
+
+.NET workloads installed:
+Configured to use loose manifests when installing new manifests.
+There are no installed workloads to display.
+
+Host:
+  Version:      8.0.32
+  Architecture: x64
+  Commit:       b9a49e4a6d
+
+.NET SDKs installed:
+  8.0.426 [/tmp/dnf-combat006.VNQq6b/sdk/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 8.0.32 [/tmp/dnf-combat006.VNQq6b/sdk/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 8.0.32 [/tmp/dnf-combat006.VNQq6b/sdk/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  Not set
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+TEST CODE PREPARATION (RED)
+Regression-only commit: 2f657b42180cee1dcf3f2c229f51015ccb9bc8aa
+File changed: tests/Combat004/Runner.cs ONLY.
+4 test groups added ahead of existing seven:
+  - .12/.20 Tick illegal vs 12 legal 1/60s ticks
+  - Hitstop .055 and .09 whole-frame quantization / queue freeze
+  - attack facing can change mid-windup; test current-facing selection
+  - target order, rear tolerance, range and lane thresholds
+At RED phase production Combat004Core.cs had NO changes.
+
+RED COMMAND (real C#):
+  /tmp/dnf-combat006.VNQq6b/sdk/dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+Exact RED_RUN_EXIT=1.
+Full combined stdout/stderr:
+FAIL COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path: System.Exception: oversized Tick(0.12) was not rejected
+   at Combat004Runner.Require(Boolean value, String message) in /tmp/dnf-combat006.VNQq6b/repo/tests/Combat004/Runner.cs:line 10
+   at Combat004Runner.RejectOversizeTicksWithoutMutation() in /tmp/dnf-combat006.VNQq6b/repo/tests/Combat004/Runner.cs:line 165
+   at Combat004Runner.Check(String title, Action body) in /tmp/dnf-combat006.VNQq6b/repo/tests/Combat004/Runner.cs:line 18
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 10 pass, 1 fail
+RED log SHA256: 65f4e8297c3cb72b164cb9ade812a8d549ffe45965f4b53e2b6e163e5d45ef48
+
+MINIMAL CODE FIX
+Fix commit SHA: 0d14a205b835bc0e4ce3cce7e87652a6771bc02a
+Only production source changed: Assets/Scripts/Research/Combat004Core.cs (11 added, 4 deleted lines).
+At the beginning of Tick, reject NaN/±Infinity, negative dt and dt > FixedStep + 0.000001f
+BEFORE any enemy, attacker, animation or input-time mutation.
+This is a FIXED-STEP CORE CONTRACT, NOT a multi-stage interval event queue. The inner
+ThreeHitReferenceClock still accepts variable dt, as earlier COMBAT005 tests verify.
+Caller must perform repeated 60Hz ticks, e.g. 12 ticks of .016667 instead of one .20 tick.
+
+GREEN COMMANDS (real C#):
+  /tmp/dnf-combat006.VNQq6b/sdk/dotnet run --project tests/Combat004/Combat004.Tests.csproj --configuration Release
+  /tmp/dnf-combat006.VNQq6b/sdk/dotnet run --project tests/Combat002/Combat002.Tests.csproj --configuration Release
+Both executed on exact green source HEAD 0d14a205b835bc0e4ce3cce7e87652a6771bc02a.
+COMBAT004_EXIT=0 (11 pass / 0 fail); exact stdout/stderr:
+PASS COMBAT004 COMBAT006 dt 0.12/0.20 rejected vs legal 60Hz path
+PASS COMBAT004 COMBAT006 55/90ms whole-tick hitstop quantization
+PASS COMBAT004 COMBAT006 freely steered attack-facing contract
+PASS COMBAT004 COMBAT006 target order, rear tolerance, range/lane thresholds
+PASS COMBAT004 one stage hits two independent target IDs once
+PASS COMBAT004 attacker and BOTH victim clocks freeze and resume
+PASS COMBAT004 three attack stages damage both targets without fourth
+PASS COMBAT004 facing direction filters rear targets
+PASS COMBAT004 reset restores both enemies and attack clock
+PASS COMBAT004 NaN infinity and negative delta rejected
+PASS COMBAT004 9 self-drawn frame anchors, 3 PPU, dynamic mirror
+COMBAT004: 11 pass, 0 fail
+GREEN log SHA256: 51ac182ef7689233e025ca408ee840a63675141b2b3c480bcc6e2e13ba0b832f
+
+COMBAT002_EXIT=0 (12 pass / 0 fail); exact stdout/stderr:
+PASS COMBAT-005 crossed-buffer 0.12/0.16/0.20
+PASS COMBAT-005 dt partition equivalence
+PASS COMBAT-005 interval hit-window traversal
+PASS COMBAT-005 nonfinite dt guarded
+PASS COMBAT-005 public frame arrays isolated
+PASS COMBAT-005 SpriteRenderer Z preserved
+PASS idle/reset
+PASS frame change points
+PASS input buffer at 60Hz
+PASS one eligible contact per stage
+PASS negative step rejected
+PASS eight anchor records x both facings
+COMBAT-002: 12 pass, 0 fail
+LEGACY log SHA256: 7425c820db63362dc9dca9e7a3dd5e5d558f9138d9b43e80a2d495f973f46f17
+
+COVERAGE AND DESIGN DECISIONS:
+1. Hitstop .055s -> 4 full 60Hz ticks (approx .0666667s); .09s -> 6 full ticks (.1s).
+   Freeze timers decrement but combat clock and input lifetime DO NOT advance on those ticks.
+   This is intentionally whole-tick quantization; NOT exact 55/90ms stop.
+2. Facing can change mid-windup; experimental move/facing input allowed outside hitstop.
+   Rear tolerance -0.10 world unit, forward range 3.0, abs lane delta <= .65.
+   Target IDs required unique; swapped-order test passes. Duplicate IDs not covered.
+3. Non-Unity .NET test builds original core and clock but NOT ResearchCombat004Scene.cs.
+   Original math stubs are NOT real UnityEngine Editor verification.
+4. Unity 6000.3.26f1 Editor import/compile, generated sprites, actual IMGUI keyboard/touch,
+   PlayMode combat feedback, Android phone video, APK all NOT RUN/BLOCKED.
+5. Current ProjectSettings/EditorBuildSettings.asset remains Bootstrap ONLY. Build scene
+   swap is documented as a future explicitly user-authorized, reversible build-only
+   branch change, never applied now.
+6. Unity Cloud Build Automation manual trigger setting was NOT altered. No remote
+   build, APK, GitHub Actions workflow, webhook setting, or unauthorized art touched.
+7. Test checkout git status --porcelain listed ONLY generated untracked
+   tests/Combat002/bin/ and tests/Combat004/bin/; no tracked local source changes.
+
+STATUS: awaiting 智脑2 review in Issue #7; do not close or merge automatically.
