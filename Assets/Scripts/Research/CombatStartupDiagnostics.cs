@@ -21,6 +21,7 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
     private string _lastEngineError = "";
     private bool _tintedFailure;
     private int _repaintCount;
+    private bool _diagnosticGuiFaultReported;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void InstallBeforeSceneLoad()
@@ -212,10 +213,16 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
             if (Event.current != null && Event.current.type == EventType.Repaint)
                 _repaintCount++;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // OnGUI itself must not throw recursively; logcat still captures
-            // original errors via Application.logMessageReceived.
+            // Report ONCE: even a broken independent diagnostic GUI must not
+            // degrade back into an unreported dark-blue screen.
+            if (_diagnosticGuiFaultReported) return;
+            _diagnosticGuiFaultReported = true;
+            _trace.Fail("DIAG_ONGUI", ex.GetType().Name);
+            Persist("FAIL_DIAG_ONGUI");
+            TintFailureCamera();
+            Debug.LogException(ex); // full runtime stack ONLY in device logcat
         }
     }
 
