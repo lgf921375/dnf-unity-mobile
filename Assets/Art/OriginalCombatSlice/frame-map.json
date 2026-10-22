@@ -38,7 +38,7 @@
   "enemy": {
     "file": "Enemy/mossling_atlas.png",
     "pixelWidth": 448,
-    "pixelHeight": 384,
+    "pixelHeight": 512,
     "frameWidth": 112,
     "frameHeight": 128,
     "columns": 4,
@@ -57,7 +57,10 @@
       "air1",
       "down0",
       "down1",
-      "ko0"
+      "ko0",
+      "getup0",
+      "getup1",
+      "invul0"
     ]
   },
   "background": {
