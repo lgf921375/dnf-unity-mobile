@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems><Nullable>disable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Runner.cs" />
+    <Compile Include="../../Assets/Scripts/Research/CombatVisualAdapter.cs" />
+    <Compile Include="../../Assets/Scripts/Research/Combat004Core.cs" />
+    <Compile Include="../../Assets/Scripts/Research/CombatHitEvent.cs" />
+    <Compile Include="../../Assets/Scripts/Research/CombatReactionState.cs" />
+    <Compile Include="../../Assets/Scripts/Research/ThreeHitReferenceClock.cs" />
+  </ItemGroup>
+</Project>
