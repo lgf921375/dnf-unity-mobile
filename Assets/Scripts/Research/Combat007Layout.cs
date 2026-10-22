@@ -19,6 +19,14 @@ namespace DnfUnityMobile.Research
             Y < b.Y + b.Height && b.Y < Y + Height;
     }
 
+    // One input-frame snapshot built from multiple simultaneous touch pointers.
+    // "Down" means a new finger contact, so ATTACK/RESET cannot repeat on hold.
+    public struct Combat007PointerFrame
+    {
+        public bool LeftHeld, RightHeld, AttackDown, ResetDown;
+        public float MoveAxis => (RightHeld ? 1f : 0f) - (LeftHeld ? 1f : 0f);
+    }
+
     // No mutable globals. Always recompute after rotation/resolution/safeArea change.
     public readonly struct Combat007Layout
     {
@@ -89,6 +97,23 @@ namespace DnfUnityMobile.Research
         {
             uiX = (screenX - OriginX) / Scale;
             uiY = (PixelHeight - screenY - OriginTopY) / Scale;
+        }
+
+        // Called for each active pointer independently. Pointer phases/positions
+        // are captured by the platform adapter (Unity Update) but resolved here.
+        public void AddPointer(ref Combat007PointerFrame frame,
+            float screenX, float screenY, bool isDown, bool justBegan)
+        {
+            if (!isDown) return;
+            float x, y;
+            BottomLeftScreenToVirtual(screenX, screenY, out x, out y);
+            if (Left.Contains(x, y)) frame.LeftHeld = true;
+            if (Right.Contains(x, y)) frame.RightHeld = true;
+            if (justBegan)
+            {
+                if (Attack.Contains(x, y)) frame.AttackDown = true;
+                else if (Reset.Contains(x, y)) frame.ResetDown = true;
+            }
         }
 
         public void VirtualToBottomLeftScreen(float uiX, float uiY,
