@@ -1,3 +1,39 @@
+# Active handoff — COMBAT-004 visual scene candidate (2026-10-22)
+
+## Fixed task/branch
+- Task Issue: https://github.com/lgf921375/dnf-unity-mobile/issues/3 (leave OPEN for 智脑2).
+- **Only approved writable branch:** `work/unity-combat-004-scene-20261022`, created from research checkpoint `4c94bc157cc3822fd779e08a5d20e59f97559116`.
+- Protected main checked unchanged: `ae65b231f5b100ac46d71b8f3ddd3348ae948d5e`.
+- No Unity Cloud, GitHub Actions, APK or Godot work was carried out.
+
+## Delivered code
+- Independent scene: `Assets/Scenes/ResearchCombat004.unity` (+ .meta), with one `ResearchCombat004Scene` behaviour; only open it explicitly in local Unity 6000.3.26f1 Editor.
+- `Assets/Scripts/Research/ResearchCombat004Scene.cs` (+ .meta): programmer-authored in-memory sprites (nine variable-trim frames), keyboard/legacy IMGUI controls, combat HUD, SpriteRenderer flipX and foot anchor reapply, two unique enemy displays.
+- `Assets/Scripts/Research/Combat004Core.cs`: 60Hz single-player frame-hit matrix, two targets with independent hit dedup, attacker+victim hitstop, local-time input buffering, stun, knockback and third-hit lift.
+- `Assets/Scripts/MobileSmoke.cs`: branch-only, minimum Bootstrap-only guard to keep old smoke scene unchanged but prevent its global auto GUI/camera on ResearchCombat004.
+- `Assets/Scripts/Research/ThreeHitReferenceClock.cs`: added readonly `QueuedFor` debug value.
+- `tests/Combat004/Combat004.Tests.csproj` and `Runner.cs`: real .NET 8 test runner + UnityEngine stand-ins for math only.
+- Editor testing guide: `docs/research/COMBAT-004-scene-guide-20261022.md`.
+- Actual console test evidence TXT: `docs/research/evidence/COMBAT-004-dotnet8-20261022.txt`.
+
+## Current actual acceptance status
+- **PASS, ACTUAL .NET 8:** Ubuntu 24.04, SDK 8.0.426, real source compilation and tests: COMBAT002/005 **12/12**, COMBAT004 **7/7**, both exit 0, tested code SHA `a097d9647df0f526d1841c7e8e01d944cd570dcf`. Full stdout/hashes in evidence TXT.
+- **PASS, STATIC:** new scene YAML references the generated script .meta GUID, old smoke's AfterSceneLoad guard matches `Bootstrap`, original Bootstrap scene and EditorBuildSettings remain unchanged.
+- **NOT RUN (BLOCKED, no Editor on authorized runner):** actual Unity 6000.3.26f1 import/compilation/PlayMode, scene screenshot/video, real SpriteRenderer foot alignment, GUI, FPS and phone touch.
+- **NOT RUN:** APK, cloud/CI/build, deployment.
+- **NOT IMPLEMENTED:** network authoritative simulation, true swept Collider2D, official game/third-party art, per-attack PvP protection rules or production-grade effects.
+
+## Required follow-on / independent acceptance
+1. In a *local, user-authorized Unity 6000.3.26f1 installation* open the scene, save import/Console output; run PlayMode and capture display, attacker and two targets.
+2. Verify timing, buffered combo, two independent targets, both freeze and resume, target lift/knock, nine frames, continuously switching flipX, pivot and local Z.
+3. Open original `Bootstrap.unity` in PlayMode and confirm original smoke input/render still works.
+4. Report measured Editor version, exact SHA, logs/screenshots and PASS/FAIL; any errors only repair in this work branch, then re-run real tests.
+5. 智脑2 decides acceptance; no APK/cloud without separate user authorization.
+
+---
+
+## Historical parent research handoff (not the active COMBAT-004 task)
+
 # Active handoff — DNF-UNITY-COMBAT-005 (2026-10-22, awaiting 智脑2)
 
 **Issue:** https://github.com/lgf921375/dnf-unity-mobile/issues/4
