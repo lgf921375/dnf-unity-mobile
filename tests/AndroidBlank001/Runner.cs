@@ -200,7 +200,8 @@ public static class AndroidBlank001Runner
               !awakeBody.Contains("enabled = false"),
               "Awake catch must preserve the game's fallback error GUI");
         Check(guiBody.Contains("if (!_startupComplete)") &&
-              guiBody.Contains("if (!string.IsNullOrEmpty(_startupFailureType))") &&
+              System.Text.RegularExpressions.Regex.IsMatch(guiBody,
+                  @"if\s*\(\s*!string\.IsNullOrEmpty\(_startupFailureType\)\s*&&\s*!_startupFailureGuiFaultReported\s*\)") &&
               guiBody.Contains("DNF STARTUP ERROR"),
               "incomplete startup must expose an independent GUI error panel");
     }
