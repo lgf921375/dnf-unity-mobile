@@ -4,7 +4,6 @@
 // Diagnostic is intentionally visible on screen until first successful GUI draw.
 using System;
 using System.IO;
-using System.Collections.Generic;
 using DnfUnityMobile.Research;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -23,10 +22,9 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
     private bool _tintedFailure;
     private int _repaintCount;
     private bool _diagnosticGuiFaultReported;
-    // Bounded, first-occurrence-only writes: no synchronous IO storm on failures.
-    private const int MaxPersistedEvents = 96;
-    private readonly HashSet<string> _persistedCodes =
-        new HashSet<string>(StringComparer.Ordinal);
+    // Pure C# policy enforces per-session deduplication and a hard entry cap.
+    private readonly CombatDiagnosticWritePolicy _writePolicy =
+        new CombatDiagnosticWritePolicy();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void InstallBeforeSceneLoad()
@@ -52,7 +50,7 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         {
             _logPath = Path.Combine(Application.persistentDataPath, "combat-startup-diagnostic.txt");
             // Fresh cold-start snapshot; see Persist() for per-session hard cap.
-            _persistedCodes.Clear();
+            _writePolicy.Reset();
             File.WriteAllText(_logPath,
                 "ANDROID-BLANK-001 startup diagnostics; no user credentials or raw stack traces\n");
         }
@@ -126,9 +124,7 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         try
         {
             // Known own stage identifiers only; no arbitrary Unity log body.
-            CombatStartupTrace.Validate(code);
-            if (_persistedCodes.Count >= MaxPersistedEvents ||
-                !_persistedCodes.Add(code)) return;
+            if (!_writePolicy.TryBegin(code)) return;
             File.AppendAllText(_logPath, DateTime.UtcNow.ToString("HH:mm:ss.fff") +
                 " " + code + "\n");
         }
