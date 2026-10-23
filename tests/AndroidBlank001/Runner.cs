@@ -182,6 +182,47 @@ public static class AndroidBlank001Runner
               "Combat004Core requires <= 1/60s"),
               "Core unchanged contract expected");
     }
+    // Static source-contract checks only. These DO NOT replace a Unity/Android run.
+    private static void FailedAwakeKeepsOwnErrorGui()
+    {
+        string scene=Source("Assets/Scripts/Research/ResearchCombat004Scene.cs");
+        int awake=scene.IndexOf("private void Awake()",StringComparison.Ordinal);
+        int update=scene.IndexOf("private void Update()",StringComparison.Ordinal);
+        int gui=scene.IndexOf("private void OnGUI()",StringComparison.Ordinal);
+        Check(awake>=0 && update>awake && gui>update,"scene lifecycle methods missing");
+        string awakeBody=scene.Substring(awake,update-awake);
+        string guiBody=scene.Substring(gui);
+        Check(awakeBody.Contains("_startupFailureType = ex.GetType().Name") &&
+              awakeBody.Contains("CombatStartupDiagnostics.Fail(\\"SCENE_AWAKE\\", ex)") &&
+              !awakeBody.Contains("enabled = false"),
+              "Awake catch must preserve the game's fallback error GUI");
+        Check(guiBody.Contains("if (!_startupComplete)") &&
+              guiBody.Contains("if (!string.IsNullOrEmpty(_startupFailureType))") &&
+              guiBody.Contains("DNF STARTUP ERROR"),
+              "incomplete startup must expose an independent GUI error panel");
+    }
+
+    private static void LegacyInputFailureDoesNotKillRendering()
+    {
+        string scene=Source("Assets/Scripts/Research/ResearchCombat004Scene.cs");
+        int update=scene.IndexOf("private void Update()",StringComparison.Ordinal);
+        int fixedUpdate=scene.IndexOf("private void FixedUpdate()",StringComparison.Ordinal);
+        Check(update>=0 && fixedUpdate>update,"Update/FixedUpdate missing");
+        string body=scene.Substring(update,fixedUpdate-update);
+        int guarded=body.IndexOf("if (!_legacyInputUnavailable)",StringComparison.Ordinal);
+        int caught=body.IndexOf("catch (InvalidOperationException)",StringComparison.Ordinal);
+        int core=body.IndexOf("if (attackDown) _core.PressAttack()",StringComparison.Ordinal);
+        Check(guarded>=0 && caught>guarded && core>caught,
+              "Input-only exception handler must not mask core exceptions");
+        Check(body.Contains("_legacyInputUnavailable = true;") &&
+              body.Contains("_keyboardAxis = 0f;") && body.Contains("_guiAxis = 0f;") &&
+              body.Contains("Input.GetTouch") && body.Contains("pointers.AttackDown") &&
+              !body.Substring(caught,core-caught).Contains("enabled = false"),
+              "Input failure should release controls and preserve scene rendering");
+        Check(scene.Contains("INPUT UNAVAILABLE: check Android Active Input Handling"),
+              "Input setup failure must have a visible explanatory cue");
+    }
+
     public static int Main()
     {
         FindRoot();
@@ -193,6 +234,8 @@ public static class AndroidBlank001Runner
         Test("scene#0 Bootstrap#1 script GUID and stable editor version",SceneFirstAndGuids);
         Test("pre-scene independent error overlay and guarded event loop",DiagnosticIndependentOfGame);
         Test("Resources versus Sprite stage and combat/touch invariants",StageGranularityAndNoCoreDiff);
+        Test("failed Awake preserves source-level error GUI",FailedAwakeKeepsOwnErrorGui);
+        Test("unsupported legacy Input does not shut down rendering",LegacyInputFailureDoesNotKillRendering);
         Console.WriteLine("ANDROID-BLANK-001 "+_pass+" pass, "+_fail+" fail");
         return _fail==0?0:1;
     }
