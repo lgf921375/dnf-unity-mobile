@@ -221,6 +221,11 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
             if (Event.current != null && Event.current.type == EventType.Repaint)
                 _repaintCount++;
         }
+        catch (ExitGUIException)
+        {
+            // IMGUI uses this exception to end an event; preserve Unity's control flow.
+            throw;
+        }
         catch (Exception ex)
         {
             // Report ONCE: even a broken independent diagnostic GUI must not
