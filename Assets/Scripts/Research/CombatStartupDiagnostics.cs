@@ -4,6 +4,7 @@
 // Diagnostic is intentionally visible on screen until first successful GUI draw.
 using System;
 using System.IO;
+using System.Collections.Generic;
 using DnfUnityMobile.Research;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,6 +23,10 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
     private bool _tintedFailure;
     private int _repaintCount;
     private bool _diagnosticGuiFaultReported;
+    // Bounded, first-occurrence-only writes: no synchronous IO storm on failures.
+    private const int MaxPersistedEvents = 96;
+    private readonly HashSet<string> _persistedCodes =
+        new HashSet<string>(StringComparer.Ordinal);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void InstallBeforeSceneLoad()
@@ -46,7 +51,8 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         try
         {
             _logPath = Path.Combine(Application.persistentDataPath, "combat-startup-diagnostic.txt");
-            // Do not append an unlimited lifetime log. Fresh cold-start snapshot.
+            // Fresh cold-start snapshot; see Persist() for per-session hard cap.
+            _persistedCodes.Clear();
             File.WriteAllText(_logPath,
                 "ANDROID-BLANK-001 startup diagnostics; no user credentials or raw stack traces\n");
         }
@@ -93,9 +99,11 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
             {
                 _instance._trace.Fail(literalStage,
                     ex == null ? "UnknownException" : ex.GetType().Name);
-                _instance.Persist("FAIL_" + literalStage);
-                _instance.TintFailureCamera();
             }
+            catch (Exception) { /* never mask the scene's original exception */ }
+            try { _instance.Persist("FAIL_" + literalStage); }
+            catch (Exception) { }
+            try { _instance.TintFailureCamera(); }
             catch (Exception) { }
         }
         if (ex != null) Debug.LogException(ex);
@@ -119,6 +127,8 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         {
             // Known own stage identifiers only; no arbitrary Unity log body.
             CombatStartupTrace.Validate(code);
+            if (_persistedCodes.Count >= MaxPersistedEvents ||
+                !_persistedCodes.Add(code)) return;
             File.AppendAllText(_logPath, DateTime.UtcNow.ToString("HH:mm:ss.fff") +
                 " " + code + "\n");
         }
@@ -169,6 +179,8 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
 
     private void OnGUI()
     {
+        Color previousGuiColor = Color.white;
+        bool restoreGuiColor = false;
         try
         {
             // GUI coordinates are top-left-origin physical pixels.
@@ -183,7 +195,8 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
             bool failed = _trace.Failed;
             bool showDetails = failed || !_trace.Ready || !_sceneGuiPainted;
             float height = showDetails ? 180f : 76f;
-            Color old = GUI.color;
+            previousGuiColor = GUI.color;
+            restoreGuiColor = true;
             GUI.color = failed ? new Color(1f, .55f, .57f, 1f)
                 : (_trace.Ready ? new Color(.65f, 1f, .78f, 1f)
                     : new Color(1f, .91f, .62f, 1f));
@@ -191,7 +204,6 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
                 failed ? "ANDROID STARTUP FAILED — DIAGNOSTIC" :
                     (_trace.Ready ? "ANDROID STARTUP READY — VERIFY ART + CONTROLS"
                          : "ANDROID STARTUP IN PROGRESS"));
-            GUI.color = old;
             GUIStyle label = new GUIStyle(GUI.skin.label);
             label.fontSize = Mathf.Clamp(Screen.height / 37, 14, 23);
             label.normal.textColor = Color.white;
@@ -217,12 +229,27 @@ public sealed class CombatStartupDiagnostics : MonoBehaviour
         {
             // Report ONCE: even a broken independent diagnostic GUI must not
             // degrade back into an unreported dark-blue screen.
-            if (_diagnosticGuiFaultReported) return;
-            _diagnosticGuiFaultReported = true;
-            _trace.Fail("DIAG_ONGUI", ex.GetType().Name);
-            Persist("FAIL_DIAG_ONGUI");
-            TintFailureCamera();
-            Debug.LogException(ex); // full runtime stack ONLY in device logcat
+            if (!_diagnosticGuiFaultReported)
+            {
+                _diagnosticGuiFaultReported = true;
+                // Error reporting itself must not throw or overwrite first fault.
+                try { _trace.Fail("DIAG_ONGUI", ex.GetType().Name); }
+                catch (Exception) { }
+                try { Persist("FAIL_DIAG_ONGUI"); }
+                catch (Exception) { }
+                try { TintFailureCamera(); }
+                catch (Exception) { }
+                try { Debug.LogException(ex); }
+                catch (Exception) { }
+            }
+        }
+        finally
+        {
+            if (restoreGuiColor)
+            {
+                try { GUI.color = previousGuiColor; }
+                catch (Exception) { }
+            }
         }
     }
 
