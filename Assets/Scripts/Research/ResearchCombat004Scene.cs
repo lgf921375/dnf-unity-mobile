@@ -27,6 +27,7 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     private bool _startupComplete;
     // Keep a source-controlled, type-only failure hint visible even when art initialization fails.
     private string _startupFailureType;
+    private bool _startupFailureGuiFaultReported;
     // A mismatched PlayerSettings Active Input Handling must not kill scene rendering.
     private bool _legacyInputUnavailable;
     private bool _firstSceneUpdateReported;
@@ -363,11 +364,23 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
             // Never render the previous silent blue background if Awake failed.
             if (!string.IsNullOrEmpty(_startupFailureType))
             {
-                float width = Mathf.Max(1f, Mathf.Min(660f, Screen.width - 36f));
-                GUI.Box(new Rect(18f, 18f, width, 104f), "DNF STARTUP ERROR");
-                GUI.Label(new Rect(30f, 58f, width - 24f, 48f),
-                    "Scene initialization failed: " + _startupFailureType +
-                    ". See startup diagnostics.");
+                try
+                {
+                    float width = Mathf.Max(1f, Mathf.Min(660f, Screen.width - 36f));
+                    GUI.Box(new Rect(18f, 18f, width, 104f), "DNF STARTUP ERROR");
+                    GUI.Label(new Rect(30f, 58f, width - 24f, 48f),
+                        "Scene initialization failed: " + _startupFailureType +
+                        ". See startup diagnostics.");
+                }
+                catch (Exception ex)
+                {
+                    if (!_startupFailureGuiFaultReported)
+                    {
+                        _startupFailureGuiFaultReported = true;
+                        try { CombatStartupDiagnostics.Fail("SCENE_FAILURE_GUI", ex); }
+                        catch (Exception) { /* diagnostic failures must not escape */ }
+                    }
+                }
             }
             return;
         }
