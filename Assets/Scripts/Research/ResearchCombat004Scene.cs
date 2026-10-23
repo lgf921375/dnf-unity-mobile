@@ -142,6 +142,7 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         bool attackDown = false;
         bool resetDown = false;
         bool toggleDebug = false;
+#if ENABLE_LEGACY_INPUT_MANAGER
         if (!_legacyInputUnavailable)
         {
             try
@@ -189,6 +190,17 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
                 Debug.LogWarning("ANDROID-BLANK-001: Legacy Unity Input unavailable; scene rendering stays active.");
             }
         }
+#else
+        // The legacy Input Manager is not compiled into this Player configuration.
+        // Avoid calling UnityEngine.Input at all while still drawing the scene.
+        if (!_legacyInputUnavailable)
+        {
+            _legacyInputUnavailable = true;
+            _keyboardAxis = 0f;
+            _guiAxis = 0f;
+            Debug.LogWarning("ANDROID-BLANK-001: Legacy Input disabled at build time; visual scene continues.");
+        }
+#endif
         // Core operations stay OUTSIDE the input-specific exception handler.
         if (attackDown) _core.PressAttack();
         if (resetDown) ResetScene();
