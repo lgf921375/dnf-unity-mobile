@@ -133,6 +133,9 @@ public static class ArtSliceRunner
             if(name.EndsWith(".png"))
                 Need(txt.Contains("TextureImporter:")&&txt.Contains("isReadable: 1"),
                     "atlas importer must support Sprite.Create: "+name);
+            if(name.StartsWith("Assets/Resources/", StringComparison.Ordinal))
+                Need(txt.Contains("npotScale: 0") && txt.Contains("textureCompression: 0"),
+                    "runtime atlas must keep exact NPOT dimensions and uncompressed pixels: " + name);
         }
         string ver=File.ReadAllText(Path.Combine(Root,"ProjectSettings/ProjectVersion.txt"));
         Need(ver.Contains("6000.3.26f1"),"Unity Editor version must remain fixed");
@@ -146,8 +149,11 @@ public static class ArtSliceRunner
         Need(!scene.Contains("CreateFrame(\"idle\","),"old block placeholder frames still executed");
         Need(!scene.Contains("MakePanel(\"Floor\""),"old floor rectangle still executed");
         Need(show.Contains("Resources.Load<Texture2D>") &&
-            show.Contains("ReferenceSpriteAlignment.ApplyCenteredSprite"),
-            "atlas load/foot alignment missing");
+            show.Contains("ReferenceSpriteAlignment.ApplyCenteredSprite") &&
+            show.Contains("ATLAS_SIZE_") &&
+            show.Contains("ATLAS_FIRST_SPRITE_BEGIN_") &&
+            show.Contains("ATLAS_FIRST_SPRITE_OK_"),
+            "atlas import or first-sprite diagnostic contract missing");
         // VISUAL-INTEGRATION-001: phase mapping moved to Unity-independent adapter.
         // Keep the old source-of-truth assertion, inspect its new owner.
         string adapter=File.ReadAllText(Path.Combine(Root,
