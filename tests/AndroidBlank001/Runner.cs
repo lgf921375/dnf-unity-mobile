@@ -37,15 +37,18 @@ public static class AndroidBlank001Runner
     private static void SuccessfulBootstrap()
     {
         var state=new CombatStartupTrace();
-        foreach(var stage in new[]{"DIAGNOSTICS_INSTALLED","SCENE_LOADED",
+        // Awake() runs before sceneLoaded on scene objects; this is a pure
+        // state simulation, NOT proof of actual Unity callback scheduling.
+        foreach(var stage in new[]{"DIAGNOSTICS_INSTALLED",
                      "SCENE_AWAKE_ENTER","CORE_READY","CAMERA_READY",
                      "PRESENTER_INITIALIZED","FIRST_SPRITES_ASSIGNED"})
             state.Enter(stage);
-        Check(state.Count==7 && state.LastStage=="FIRST_SPRITES_ASSIGNED",
+        Check(state.Count==6 && state.LastStage=="FIRST_SPRITES_ASSIGNED",
             "startup stage sequencing");
         state.SetReady();
         Check(state.Ready && !state.Failed && state.LastStage=="SCENE_READY",
             "successful scene must be marked ready");
+        state.Enter("SCENE_LOADED");
         state.Enter("SCENE_GUI_REPAINT");
         Check(state.Ready && state.LastStage=="SCENE_GUI_REPAINT",
             "GUI renderer opportunity recorded after ready");
@@ -226,6 +229,42 @@ public static class AndroidBlank001Runner
               "Input setup failure must have a visible explanatory cue");
     }
 
+    private static void GenericExceptionTypeDoesNotHideFirstFault()
+    {
+        var state = new CombatStartupTrace();
+        state.Fail("SCENE_AWAKE","GenericFailure`1");
+        Check(state.Failed && state.FaultType=="GenericFailure_1",
+            "generic exception type should normalize safely");
+        state.Fail("SCENE_FIXED","SecondaryException");
+        Check(state.FaultStage=="SCENE_AWAKE" && state.FaultType=="GenericFailure_1",
+            "first failure should remain authoritative");
+        var unsafeState = new CombatStartupTrace();
+        unsafeState.Fail("SCENE_AWAKE","secret: /private/path");
+        Check(unsafeState.FaultType=="UnknownException",
+            "unsafe exception names must not be persisted");
+        var longState = new CombatStartupTrace();
+        longState.Fail("SCENE_AWAKE",new string('Q',90));
+        Check(longState.FaultType=="UnknownException",
+            "overlong type names must fall back to fixed token");
+    }
+
+    private static void DiagnosticFailureProtectionSourceContract()
+    {
+        string diag=Source("Assets/Scripts/Research/CombatStartupDiagnostics.cs");
+        string scene=Source("Assets/Scripts/Research/ResearchCombat004Scene.cs");
+        Check(diag.Contains("MaxPersistedEvents = 96") &&
+              diag.Contains("_persistedCodes.Add(code)") &&
+              diag.Contains("_persistedCodes.Count >= MaxPersistedEvents"),
+              "portable diagnostic write rate is unbounded");
+        Check(diag.Contains("finally") &&
+              diag.Contains("GUI.color = previousGuiColor") &&
+              diag.Contains("_diagnosticGuiFaultReported"),
+              "diagnostic UI restoration/second-fault protection missing");
+        Check(scene.Contains("_startupFailureGuiFaultReported") &&
+              scene.Contains("CombatStartupDiagnostics.Fail(\"SCENE_FAILURE_GUI\", ex)"),
+              "scene failure GUI can throw without guarded diagnostics");
+    }
+
     public static int Main()
     {
         FindRoot();
@@ -239,6 +278,8 @@ public static class AndroidBlank001Runner
         Test("Resources versus Sprite stage and combat/touch invariants",StageGranularityAndNoCoreDiff);
         Test("failed Awake preserves source-level error GUI",FailedAwakeKeepsOwnErrorGui);
         Test("unsupported legacy Input does not shut down rendering",LegacyInputFailureDoesNotKillRendering);
+        Test("generic exception type preserves first failure",GenericExceptionTypeDoesNotHideFirstFault);
+        Test("diagnostic second-fault and disk-write guards",DiagnosticFailureProtectionSourceContract);
         Console.WriteLine("ANDROID-BLANK-001 "+_pass+" pass, "+_fail+" fail");
         return _fail==0?0:1;
     }
