@@ -252,10 +252,11 @@ public static class AndroidBlank001Runner
     {
         string diag=Source("Assets/Scripts/Research/CombatStartupDiagnostics.cs");
         string scene=Source("Assets/Scripts/Research/ResearchCombat004Scene.cs");
-        Check(diag.Contains("MaxPersistedEvents = 96") &&
-              diag.Contains("_persistedCodes.Add(code)") &&
-              diag.Contains("_persistedCodes.Count >= MaxPersistedEvents"),
-              "portable diagnostic write rate is unbounded");
+        Check(diag.Contains("_writePolicy.TryBegin(code)") &&
+              diag.Contains("_writePolicy.Reset()") &&
+              Source("Assets/Scripts/Research/CombatDiagnosticWritePolicy.cs").Contains(
+                  "public const int MaxCodes = 96"),
+              "portable diagnostic write rate policy is missing");
         Check(diag.Contains("finally") &&
               diag.Contains("GUI.color = previousGuiColor") &&
               diag.Contains("_diagnosticGuiFaultReported"),
@@ -263,6 +264,31 @@ public static class AndroidBlank001Runner
         Check(scene.Contains("_startupFailureGuiFaultReported") &&
               scene.Contains("CombatStartupDiagnostics.Fail(\"SCENE_FAILURE_GUI\", ex)"),
               "scene failure GUI can throw without guarded diagnostics");
+    }
+
+    private static void BoundedDiagnosticWritePolicyBehavior()
+    {
+        var policy = new CombatDiagnosticWritePolicy();
+        Check(policy.TryBegin("DIAG_FIRST"), "first category should be accepted");
+        Check(!policy.TryBegin("DIAG_FIRST"), "same category must be deduplicated");
+        for (int i = 1; i < CombatDiagnosticWritePolicy.MaxCodes; ++i)
+            Check(policy.TryBegin("DIAG_STAGE_" + i), "unique category rejected early: " + i);
+        Check(policy.Count == CombatDiagnosticWritePolicy.MaxCodes,
+            "policy failed to stop at the hard session cap");
+        Check(!policy.TryBegin("DIAG_OVERFLOW"),
+            "event beyond per-session limit should not reach filesystem");
+        Check(!policy.TryBegin("DIAG_FIRST"),
+            "deduplication should still hold at capacity");
+
+        policy.Reset();
+        Check(policy.Count == 0 && policy.TryBegin("DIAG_FIRST"),
+            "fresh session must reset deduplication and capacity");
+
+        bool rejected = false;
+        try { policy.TryBegin("SECRET: /a/private/path"); }
+        catch (ArgumentException) { rejected = true; }
+        Check(rejected && policy.Count == 1,
+            "invalid payload must be rejected without consuming event quota");
     }
 
     public static int Main()
@@ -280,6 +306,7 @@ public static class AndroidBlank001Runner
         Test("unsupported legacy Input does not shut down rendering",LegacyInputFailureDoesNotKillRendering);
         Test("generic exception type preserves first failure",GenericExceptionTypeDoesNotHideFirstFault);
         Test("diagnostic second-fault and disk-write guards",DiagnosticFailureProtectionSourceContract);
+        Test("bounded diagnostic write admission policy (pure C#)",BoundedDiagnosticWritePolicyBehavior);
         Console.WriteLine("ANDROID-BLANK-001 "+_pass+" pass, "+_fail+" fail");
         return _fail==0?0:1;
     }
