@@ -373,6 +373,11 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
                         "Scene initialization failed: " + _startupFailureType +
                         ". See startup diagnostics.");
                 }
+                catch (ExitGUIException)
+                {
+                    // Unity IMGUI control flow; do not report as startup failure.
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     if (!_startupFailureGuiFaultReported)
@@ -439,6 +444,11 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
                 _firstSceneGuiReported = true;
                 CombatStartupDiagnostics.SceneGuiPainted();
             }
+        }
+        catch (ExitGUIException)
+        {
+            // Allow Unity to finish the current GUI event normally.
+            throw;
         }
         catch (Exception ex)
         {
