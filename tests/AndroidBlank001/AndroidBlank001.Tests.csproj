@@ -9,5 +9,6 @@
   <ItemGroup>
     <Compile Include="Runner.cs" />
     <Compile Include="../../Assets/Scripts/Research/CombatStartupTrace.cs" />
+    <Compile Include="../../Assets/Scripts/Research/CombatDiagnosticWritePolicy.cs" />
   </ItemGroup>
 </Project>
