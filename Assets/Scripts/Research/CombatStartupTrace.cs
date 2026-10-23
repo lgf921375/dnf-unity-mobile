@@ -38,13 +38,27 @@ namespace DnfUnityMobile.Research
         {
             if (Failed) return; // preserve the FIRST root cause
             Validate(stage);
-            Validate(exceptionType);
+            // Exception.GetType().Name can contain a backtick for generic types.
+            // Never record messages or paths; use a fixed fallback for unsafe names.
+            string safeType = SafeExceptionTypeName(exceptionType);
             FaultStage = stage;
-            FaultType = exceptionType;
+            FaultType = safeType;
             LastStage = "FAILED:" + stage;
             Failed = true;
             Ready = false;
-            _stages.Add("FAILED:" + stage + ":" + exceptionType);
+            if (_stages.Count >= 64) _stages.RemoveAt(0);
+            _stages.Add("FAILED:" + stage + ":" + safeType);
+        }
+
+        // The caller must pass only an exception TYPE name, never an exception
+        // message. Unknown names are intentionally reduced to a fixed token.
+        public static string SafeExceptionTypeName(string typeName)
+        {
+            if (string.IsNullOrEmpty(typeName) || typeName.Length > 78)
+                return "UnknownException";
+            string safe = typeName.Replace('`', '_');
+            try { Validate(safe); return safe; }
+            catch (ArgumentException) { return "UnknownException"; }
         }
 
         public string[] Snapshot() => _stages.ToArray();
