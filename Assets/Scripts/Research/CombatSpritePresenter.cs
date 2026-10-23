@@ -75,6 +75,10 @@ namespace DnfUnityMobile.Research
             Texture2D tex = RequireAtlas(name);
             int rows = (keys.Length + columns - 1) / columns;
             CombatStartupDiagnostics.Mark("ATLAS_SLICE_BEGIN_" + name);
+            // Android platform imports can alter NPOT dimensions. Persist the
+            // actual imported size before any exception, never the user's paths.
+            CombatStartupDiagnostics.Mark("ATLAS_SIZE_" + name + "_" +
+                tex.width + "x" + tex.height);
             if (tex.width != frameW * columns || tex.height != frameH * rows)
                 throw new InvalidOperationException(name + " has unexpected pixel dimensions: " +
                     tex.width + "x" + tex.height);
@@ -84,8 +88,10 @@ namespace DnfUnityMobile.Research
                 // keys and rows are enumerated from the top-left.
                 float x = (i % columns) * frameW;
                 float y = tex.height - ((i / columns) + 1) * frameH;
+                if (i == 0) CombatStartupDiagnostics.Mark("ATLAS_FIRST_SPRITE_BEGIN_" + name);
                 Sprite sprite = Sprite.Create(tex, new Rect(x, y, frameW, frameH),
                     new Vector2(0.5f, 0.5f), ppu, 0, SpriteMeshType.FullRect);
+                if (i == 0) CombatStartupDiagnostics.Mark("ATLAS_FIRST_SPRITE_OK_" + name);
                 sprite.name = name + "/" + keys[i];
                 output.Add(keys[i], sprite);
                 _slicedSprites.Add(sprite);
