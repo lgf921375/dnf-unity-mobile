@@ -362,7 +362,8 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         {
             // Independent from Combat004Core, Sprite, Resources and Presenter.
             // Never render the previous silent blue background if Awake failed.
-            if (!string.IsNullOrEmpty(_startupFailureType))
+            if (!string.IsNullOrEmpty(_startupFailureType) &&
+                !_startupFailureGuiFaultReported)
             {
                 try
                 {
