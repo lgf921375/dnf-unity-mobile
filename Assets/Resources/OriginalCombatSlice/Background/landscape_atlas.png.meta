@@ -13,10 +13,11 @@ TextureImporter:
   spriteMode: 0
   alphaIsTransparency: 1
   textureShape: 1
+  npotScale: 0
   filterMode: 0
   aniso: 1
   maxTextureSize: 2048
-  textureCompression: 1
+  textureCompression: 0
   compressionQuality: 50
   platformSettings: []
   userData:
