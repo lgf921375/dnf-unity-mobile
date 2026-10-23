@@ -25,6 +25,10 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
     private int _oldTargetFps;
     private Combat007Layout _layout;
     private bool _startupComplete;
+    // Keep a source-controlled, type-only failure hint visible even when art initialization fails.
+    private string _startupFailureType;
+    // A mismatched PlayerSettings Active Input Handling must not kill scene rendering.
+    private bool _legacyInputUnavailable;
     private bool _firstSceneUpdateReported;
     private bool _firstSceneFixedReported;
     private bool _firstSceneGuiReported;
@@ -116,8 +120,10 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
         catch (Exception ex)
         {
             // Independent pre-scene diagnostic remains when this script disables.
+            _startupFailureType = ex.GetType().Name;
             CombatStartupDiagnostics.Fail("SCENE_AWAKE", ex);
-            enabled = false;
+            // Update/FixedUpdate already guard !_startupComplete. Leave the component
+            // enabled so its own OnGUI can display an independent error panel.
         }
     }
 
@@ -133,39 +139,55 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
             }
             UpdateLayout(); // Recompute after actual Android orientation/safe-area changes.
 
-        _keyboardAxis = (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) -
-                        (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
-        if (Input.GetKeyDown(KeyCode.J) || Input.GetKeyDown(KeyCode.Space))
-            _core.PressAttack();
-        if (Input.GetKeyDown(KeyCode.R)) ResetScene();
-        if (Input.GetKeyDown(KeyCode.F1)) _debugHud = !_debugHud;
-
-        // Read all active fingers: left/right movement is held independently
-        // while a different finger taps ATTACK. Attack/Reset only on TouchPhase.Began
-        // (no IMGUI Button event repeats). Unity touch positions are bottom-left.
-        Combat007PointerFrame pointers = new Combat007PointerFrame();
-        int n = Input.touchCount;
-        if (n > 0)
+        if (!_legacyInputUnavailable)
         {
-            for (int i = 0; i < n; i++)
+            try
             {
-                Touch touch = Input.GetTouch(i);
-                bool active = touch.phase != TouchPhase.Ended &&
-                              touch.phase != TouchPhase.Canceled;
-                _layout.AddPointer(ref pointers, touch.position.x, touch.position.y,
-                    active, touch.phase == TouchPhase.Began);
+            _keyboardAxis = (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) -
+                            (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
+            if (Input.GetKeyDown(KeyCode.J) || Input.GetKeyDown(KeyCode.Space))
+                _core.PressAttack();
+            if (Input.GetKeyDown(KeyCode.R)) ResetScene();
+            if (Input.GetKeyDown(KeyCode.F1)) _debugHud = !_debugHud;
+    
+            // Read all active fingers: left/right movement is held independently
+            // while a different finger taps ATTACK. Attack/Reset only on TouchPhase.Began
+            // (no IMGUI Button event repeats). Unity touch positions are bottom-left.
+            Combat007PointerFrame pointers = new Combat007PointerFrame();
+            int n = Input.touchCount;
+            if (n > 0)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    Touch touch = Input.GetTouch(i);
+                    bool active = touch.phase != TouchPhase.Ended &&
+                                  touch.phase != TouchPhase.Canceled;
+                    _layout.AddPointer(ref pointers, touch.position.x, touch.position.y,
+                        active, touch.phase == TouchPhase.Began);
+                }
+            }
+            else
+            {
+                // Ignore synthesized mouse while any fingers are present.
+                Vector3 mouse = Input.mousePosition;
+                _layout.AddPointer(ref pointers, mouse.x, mouse.y,
+                    Input.GetMouseButton(0), Input.GetMouseButtonDown(0));
+            }
+            if (pointers.AttackDown) _core.PressAttack();
+            else if (pointers.ResetDown) ResetScene();
+            _guiAxis = pointers.MoveAxis;
+            }
+            catch (InvalidOperationException)
+            {
+                // Input.Get* can throw when Unity's Active Input Handling does
+                // not include the legacy backend. Gameplay input is then blocked,
+                // but the camera, sprites, fixed-step rendering and GUI stay alive.
+                _legacyInputUnavailable = true;
+                _keyboardAxis = 0f;
+                _guiAxis = 0f;
+                Debug.LogWarning("ANDROID-BLANK-001: Legacy Unity Input unavailable; scene rendering stays active.");
             }
         }
-        else
-        {
-            // Ignore synthesized mouse while any fingers are present.
-            Vector3 mouse = Input.mousePosition;
-            _layout.AddPointer(ref pointers, mouse.x, mouse.y,
-                Input.GetMouseButton(0), Input.GetMouseButtonDown(0));
-        }
-        if (pointers.AttackDown) _core.PressAttack();
-        else if (pointers.ResetDown) ResetScene();
-        _guiAxis = pointers.MoveAxis;
         _displayFps = Mathf.Lerp(_displayFps, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.06f);
         }
         catch (Exception ex)
@@ -318,7 +340,20 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!_startupComplete) return;
+        if (!_startupComplete)
+        {
+            // Independent from Combat004Core, Sprite, Resources and Presenter.
+            // Never render the previous silent blue background if Awake failed.
+            if (!string.IsNullOrEmpty(_startupFailureType))
+            {
+                float width = Mathf.Max(1f, Mathf.Min(660f, Screen.width - 36f));
+                GUI.Box(new Rect(18f, 18f, width, 104f), "DNF STARTUP ERROR");
+                GUI.Label(new Rect(30f, 58f, width - 24f, 48f),
+                    "Scene initialization failed: " + _startupFailureType +
+                    ". See startup diagnostics. No new build was triggered.");
+            }
+            return;
+        }
         Matrix4x4 previous = GUI.matrix;
         try
         {
@@ -329,6 +364,9 @@ public sealed class ResearchCombat004Scene : MonoBehaviour
             Quaternion.identity, new Vector3(_layout.Scale, _layout.Scale, 1f));
         // An unobtrusive HUD keeps the action readable on a phone.
         GUI.Box(new Rect(20f,14f,380f,76f), "AETHER WARD • STAFF MAGE");
+        if (_legacyInputUnavailable)
+            GUI.Label(new Rect(20f, 95f, _layout.VirtualWidth - 40f, 26f),
+                "INPUT UNAVAILABLE: check Android Active Input Handling");
         GUI.Label(new Rect(36f,42f,340f,26f), "MOSS 101  " + _core.Enemies[0].Hp +
             "/100    MOSS 102  " + _core.Enemies[1].Hp + "/100");
         if (GUI.Button(new Rect(_layout.VirtualWidth - 102f, 116f, 80f, 42f),
