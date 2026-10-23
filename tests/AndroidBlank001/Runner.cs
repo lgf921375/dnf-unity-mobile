@@ -193,7 +193,7 @@ public static class AndroidBlank001Runner
         string awakeBody=scene.Substring(awake,update-awake);
         string guiBody=scene.Substring(gui);
         Check(awakeBody.Contains("_startupFailureType = ex.GetType().Name") &&
-              awakeBody.Contains("CombatStartupDiagnostics.Fail(\\"SCENE_AWAKE\\", ex)") &&
+              awakeBody.Contains("CombatStartupDiagnostics.Fail(\"SCENE_AWAKE\", ex)") &&
               !awakeBody.Contains("enabled = false"),
               "Awake catch must preserve the game's fallback error GUI");
         Check(guiBody.Contains("if (!_startupComplete)") &&
