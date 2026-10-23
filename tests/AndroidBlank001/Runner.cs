@@ -214,6 +214,9 @@ public static class AndroidBlank001Runner
         int core=body.IndexOf("if (attackDown) _core.PressAttack()",StringComparison.Ordinal);
         Check(guarded>=0 && caught>guarded && core>caught,
               "Input-only exception handler must not mask core exceptions");
+        Check(body.Contains("#if ENABLE_LEGACY_INPUT_MANAGER") &&
+              body.Contains("#else") && body.Contains("#endif"),
+              "legacy input must be gated by actual Unity backend define");
         Check(body.Contains("_legacyInputUnavailable = true;") &&
               body.Contains("_keyboardAxis = 0f;") && body.Contains("_guiAxis = 0f;") &&
               body.Contains("Input.GetTouch") && body.Contains("pointers.AttackDown") &&
